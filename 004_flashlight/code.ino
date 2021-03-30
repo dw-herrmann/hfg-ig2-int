@@ -1,9 +1,13 @@
 int ledPin = 13;
 int sensorPin = 2;
 int sensorVal;
+int buttonState = 0;
+boolean ledState = false;
+
 
 void setup()
 {
+  // Pins definieren
   pinMode(ledPin, OUTPUT);
   pinMode(sensorPin, INPUT);
   Serial.begin(9600);
@@ -11,17 +15,22 @@ void setup()
 
 void loop()
 {
+  // Button gepresst oder nicht
   sensorVal = digitalRead(sensorPin);
   Serial.println(sensorVal);
 
-  if (sensorVal == 0)
+  // falls button gedrückt und state aus
+  if (sensorVal == 1 && buttonState == 0)
   {
-    digitalWrite(ledPin, HIGH);
-    delay(100);
+    ledState = !ledState;
+    digitalWrite(ledPin, ledState);
+    buttonState = 1;
+    Serial.println("button pressed");
   }
-  else
+  
+  // falls button nicht gedrückt und state an
+  else if (sensorVal == 0 && buttonState == 1)
   {
-    digitalWrite(ledPin, LOW);
-    delay(100);
+    buttonState = 0;
   }
 }
