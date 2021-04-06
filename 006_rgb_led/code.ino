@@ -1,7 +1,7 @@
 int ledPin1 = 9;
 int ledPin2 = 10;
 int ledPin3 = 11;
-int sensorPin = 2;
+int sensorPin = 4;
 int sensorVal;
 int buttonState = 0;
 int ledState = 0;
@@ -17,13 +17,14 @@ void loop()
 {
   sensorVal = digitalRead(sensorPin);
   // Serial.print("sensorVal: ");
-  // Serial.println(sensorVal);
+  Serial.println(sensorVal);
   // Serial.print("ledState: ");
-  // Serial.println(ledState);
+  Serial.println(ledState);
   if (sensorVal == 1 && buttonState == 0)
   {
     ledState = ledState + 1;
     buttonState = 1;
+    Serial.print("switch");
   }
   else if (sensorVal == 0 && buttonState == 1)
   {
