@@ -34,10 +34,11 @@ void loop()
     {
       counter++;
     }
+
+    Serial.println(counter);
   }
   lastState = state;
 
-  Serial.println(counter);
   analogWrite(ledPin1, abs(counter * 5));
   analogWrite(ledPin2, abs(counter * 5));
   analogWrite(ledPin3, abs(counter * 5));
