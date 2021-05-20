@@ -6,7 +6,7 @@ int yValue;
 void setup()
 {
     Serial.begin(9600);
-    Serial.println("test")
+    Serial.println("test");
 }
 
 void loop()
@@ -16,7 +16,7 @@ void loop()
     yValue = analogRead(joyY);
 
     //print the values with to plot or view
-    Serial.print("Hallo");
+    //Serial.print("Hallo");
     Serial.print(xValue);
     Serial.print("\t");
     Serial.println(yValue);
