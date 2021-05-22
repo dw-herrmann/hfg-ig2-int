@@ -23,7 +23,7 @@ Input input; // erstellt Objekt aus Klasse
 #define NUM_LEDS 32
 #define BRIGHTNESS 32
 #define LED_TYPE WS2811
-#define COLOR_ORDER RBG
+#define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
 
 #define UPDATES_PER_SECOND 100
@@ -31,7 +31,7 @@ CRGB leds[NUM_LEDS];
 void setup()
 {
     Serial.begin(9600);
-    Serial.println("test");
+    
 
 // Joystick
     // Eingabe-Werte Ausgangszustand feststellen
