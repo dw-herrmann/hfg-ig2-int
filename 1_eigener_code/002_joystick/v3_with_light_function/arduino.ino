@@ -85,19 +85,21 @@ void setup()
 void setLED(int firstLED, int amount, int color0, int color1, int color2, bool printToConsole)
 {
 
+    int maxLEDs = NUM_LEDS;
+
     // Start und Ende festlegen
-    int startLED = firstLED % NUM_LEDS;
-    int endLED = (firstLED + amount) % NUM_LEDS;
+    int startLED = firstLED % maxLEDs;
+    int endLED = (firstLED + amount) % maxLEDs;
 
     // Falls negativ, mach Zahl korrekt
     if (startLED <= 0)
     {
-        startLED = startLED + NUM_LEDS;
+        startLED = startLED + maxLEDs;
     }
 
     if (endLED <= 0)
     {
-        endLED = endLED + NUM_LEDS;
+        endLED = endLED + maxLEDs;
     }
 
     // Wenn die erstel LED kleiner als die Letzte ist
@@ -119,7 +121,7 @@ void setLED(int firstLED, int amount, int color0, int color1, int color2, bool p
     else
     {
         // Alle LEDs von der ersten bis LED anzahl einfärben …
-        for (size_t i = startLED; i < NUM_LEDS; i++)
+        for (size_t i = startLED; i < maxLEDs; i++)
         {
             leds[i].setHSV(color0, color1, color2);
         }
@@ -134,7 +136,7 @@ void setLED(int firstLED, int amount, int color0, int color1, int color2, bool p
         {
             Serial.print(endLED);
             Serial.print("-");
-            Serial.print(NUM_LEDS);
+            Serial.print(maxLEDs);
             Serial.print(" & ");
             Serial.print(0);
             Serial.print("-");
@@ -143,16 +145,15 @@ void setLED(int firstLED, int amount, int color0, int color1, int color2, bool p
     }
 }
 
-void feedbackAnimation(char feedbackType)
-{
-    // if (feedbackType == "buttonPress")
-    // {
+// void feedbackAnimation(string feedbackType)
+// {
     //     setLED(
     //         0, NUM_LEDS,
     //         180, 255, 128,
     //         false);
     // }
-}
+
+// feedbackAnimation("buttonPress");
 
 void loop()
 {
