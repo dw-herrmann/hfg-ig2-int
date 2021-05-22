@@ -42,9 +42,9 @@ Input input; // erstellt Objekt aus Klasse
 #include <FastLED.h>
 
 #define DATA_PIN 6
-#define NUM_LEDS 38
+#define NUM_LEDS 40
+int ledInner = 8;
 int ledOuter = 32;
-int ledInner = 6;
 #define BRIGHTNESS 32
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
@@ -84,66 +84,135 @@ void setup()
 }
 
 // Farben einstellen
-// Farben einstellen
-void setLED(int firstLED, int amount, int color0, int color1, int color2, bool printToConsole)
+void setLED(int ledRing, int firstLED, int amount, int color0, int color1, int color2, bool printToConsole)
 {
-
-    int maxLEDs = ledOuter;
-
-    // Start und Ende festlegen
-    int startLED = firstLED % maxLEDs;
-    int endLED = (firstLED + amount) % maxLEDs;
-
-    // Falls negativ, mach Zahl korrekt
-    if (startLED <= 0)
+    if (ledRing == 0)
     {
-        startLED = startLED + maxLEDs;
-    }
+        /* code */
 
-    if (endLED <= 0)
-    {
-        endLED = endLED + maxLEDs;
-    }
+        int maxLEDs = ledInner;
 
-    // Wenn die erstel LED kleiner als die Letzte ist
-    if (startLED < endLED)
-    {
-        // Alle LEDs in Bereich einfärben
-        for (size_t i = startLED; i < endLED; i++)
+        // Start und Ende festlegen
+        int startLED = firstLED % maxLEDs;
+        int endLED = (firstLED + amount) % maxLEDs;
+
+        // Falls negativ, mach Zahl korrekt
+        if (startLED <= 0)
         {
-            leds[i].setHSV(color0, color1, color2);
+            startLED = startLED + maxLEDs;
         }
 
-        if (printToConsole)
+        if (endLED <= 0)
         {
-            Serial.print(startLED);
-            Serial.print("-");
-            Serial.print(endLED);
+            endLED = endLED + maxLEDs;
+        }
+
+        // Wenn die erstel LED kleiner als die Letzte ist
+        if (startLED < endLED)
+        {
+            // Alle LEDs in Bereich einfärben
+            for (size_t i = startLED; i < endLED; i++)
+            {
+                leds[i].setHSV(color0, color1, color2);
+            }
+
+            if (printToConsole)
+            {
+                Serial.print(startLED);
+                Serial.print("-");
+                Serial.print(endLED);
+            }
+        }
+        else
+        {
+            // Alle LEDs von der ersten bis LED anzahl einfärben …
+            for (size_t i = startLED; i < maxLEDs; i++)
+            {
+                leds[i].setHSV(color0, color1, color2);
+            }
+
+            // … und alle restlichen von 0 bis Rest einfärben
+            for (size_t i = 0; i < endLED; i++)
+            {
+                leds[i].setHSV(color0, color1, color2);
+            }
+
+            if (printToConsole)
+            {
+                Serial.print(endLED);
+                Serial.print("-");
+                Serial.print(maxLEDs);
+                Serial.print(" & ");
+                Serial.print(0);
+                Serial.print("-");
+                Serial.print(endLED);
+            }
         }
     }
     else
     {
-        // Alle LEDs von der ersten bis LED anzahl einfärben …
-        for (size_t i = startLED; i < maxLEDs; i++)
+        int maxLEDs = ledOuter;
+
+        // Start und Ende festlegen
+        int startLED = firstLED % maxLEDs;
+        int endLED = (firstLED + amount) % maxLEDs;
+
+
+
+
+        // Falls negativ, mach Zahl korrekt
+        if (startLED <= 0)
         {
-            leds[i].setHSV(color0, color1, color2);
+            startLED = startLED + maxLEDs;
         }
 
-        // … und alle restlichen von 0 bis Rest einfärben
-        for (size_t i = 0; i < endLED; i++)
+        if (endLED <= 0)
         {
-            leds[i].setHSV(color0, color1, color2);
+            endLED = endLED + maxLEDs;
         }
 
-        if (printToConsole)
+        // Wenn die erstel LED kleiner als die Letzte ist
+        if (startLED < endLED)
         {
-            Serial.print(endLED);
-            Serial.print("-");
-            Serial.print(maxLEDs);
-            Serial.print(" & ");
-            Serial.print(0);
-            Serial.print("-");
-            Serial.print(endLED);
+
+            // Alle LEDs in Bereich einfärben
+            for (size_t i = startLED; i < endLED; i++)
+            {
+                leds[i + ledInner].setHSV(color0, color1, color2);
+            }
+
+            if (printToConsole)
+            {
+                Serial.print(startLED);
+                Serial.print("-");
+                Serial.print(endLED);
+            }
+        }
+        else
+        {
+            // Alle LEDs von der ersten bis LED anzahl einfärben …
+            for (size_t i = startLED; i < maxLEDs; i++)
+            {
+                leds[i + ledInner].setHSV(color0, color1, color2);
+            }
+
+            // … und alle restlichen von 0 bis Rest einfärben
+            for (size_t i = 0; i < endLED; i++)
+            {
+                leds[i + ledInner].setHSV(color0, color1, color2);
+            }
+
+            if (printToConsole)
+            {
+                Serial.print(endLED);
+                Serial.print("-");
+                Serial.print(maxLEDs);
+                Serial.print(" & ");
+
+                Serial.print(0);
+                Serial.print("-");
+                Serial.print(endLED);
+            }
         }
     }
 }
@@ -198,6 +267,7 @@ void feedbackDirection()
 
     // alle LEDs auf 0 stellen
     setLED(
+        0, 
         0, ledOuter,
         180, 255, 92,
         false);
@@ -207,6 +277,12 @@ void feedbackDirection()
     {
         // nur aktive LED aktivieren, den rest deaktivieren
         setLED(
+            0, 
+            activeLED - 2, 4,
+            0, 255, 255,
+            false);
+        setLED(
+            0, 
             activeLED - 2, 4,
             0, 255, 255,
             false);
@@ -215,6 +291,7 @@ void feedbackDirection()
     {
         // Alle LEDs deaktivieren
         setLED(
+            0, 
             0, ledOuter,
             0, 0, 128,
             false);
