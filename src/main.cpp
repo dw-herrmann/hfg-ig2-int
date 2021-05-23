@@ -157,9 +157,6 @@ void setLED(int ledRing, int firstLED, int amount, int color0, int color1, int c
         int startLED = firstLED % maxLEDs;
         int endLED = (firstLED + amount) % maxLEDs;
 
-
-
-
         // Falls negativ, mach Zahl korrekt
         if (startLED <= 0)
         {
@@ -217,6 +214,12 @@ void setLED(int ledRing, int firstLED, int amount, int color0, int color1, int c
     }
 }
 
+//
+//
+// ##### input
+//
+//
+
 void inputFunctionJoystick()
 {
     // Eingabe-Werte empfangen
@@ -258,6 +261,13 @@ void inputFunctionButton()
     {
         input.buttonState = 0;
     }
+
+//
+//
+// ##### output
+//
+//
+
 }
 
 void feedbackDirection()
