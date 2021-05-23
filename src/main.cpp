@@ -16,9 +16,11 @@ public:
     int pos[2];           // positionsdaten - arrays müssen direkt mit Inhaltsmenge angegeben werden
     int posPercentage[2]; // position als %
     int angle;            // Winkel
-    int force;            // Winkel
-    int buttonSensor;
-    int buttonState;
+    int active;           // Auf Winkel liegende Farbe
+    int force;            // Kraft
+    bool bottleTilted;
+    bool bottleActive = true; // debug
+    bool buttonSensor;
 };
 
 int debug = 500;
@@ -31,7 +33,7 @@ Input input; // erstellt Objekt aus Klasse
 //
 //
 
-#define button 2
+#define button 12
 
 //
 //
@@ -214,9 +216,9 @@ void setLED(int ledRing, int firstLED, int amount, int color0, int color1, int c
     }
 }
 
-//
-//
 // ##### input
+//
+//
 //
 //
 
@@ -236,8 +238,19 @@ void inputFunctionJoystick()
                       input.posPercentage[1]) *
                   180 / PI;
 
+    // Aktive LED aus Winkel herausfinden
+    input.active = round(map(input.angle, -180, 180, 0, ledOuter));
+
     // Krafteinwirkung aus Joystick herausfinden
-    input.force = (fabs(input.posPercentage[0]) + fabs(input.posPercentage[0])) / 2;
+    input.force = (fabs(input.posPercentage[0]) + fabs(input.posPercentage[1])) / 2;
+    if (input.force > 20)
+    {
+        input.bottleTilted = true;
+    }
+    else
+    {
+        input.bottleTilted = false;
+    }
 }
 
 void inputFunctionButton()
@@ -249,12 +262,7 @@ void inputFunctionButton()
     Serial.print("ledState: ");
     Serial.println(input.buttonState);
 
-    // falls button gedrückt und state aus
-    if (input.buttonSensor == 1 && input.buttonState == 0)
-    {
-        input.buttonState = 1;
-        Serial.print("button pressed");
-    }
+    Serial.print(input.buttonSensor);
 
     // falls button nicht gedrückt und state an
     else if (input.buttonSensor == 0 && input.buttonState == 1)
@@ -268,13 +276,11 @@ void inputFunctionButton()
 //
 //
 
-int  feedbackLEDPressFeedbackVar = 0;
+int feedbackLEDPressFeedbackVar = 0;
 CRGB feedbackLEDPressFeedbackTemp[40];
 void feedbackLEDPressFeedback()
 {
-    Serial.print("LEDInteractionStart = ");
-    Serial.print(feedbackLEDPressFeedbackVar);
-    Serial.print("\t");
+    int maximum = 15;
 
     // Abbrechen, wenn nichts los
     if (feedbackLEDPressFeedbackVar == 0)
@@ -311,7 +317,7 @@ void feedbackLEDPressFeedback()
     }
 
     // Unterm Maximum?
-    if (feedbackLEDPressFeedbackVar <= 15)
+    if (feedbackLEDPressFeedbackVar <= maximum)
     {
         Serial.print("Die linie geht hoch! - Florentin");
         feedbackLEDPressFeedbackVar++;
@@ -342,54 +348,53 @@ void feedbackLEDPressFeedback()
     // }
 }
 
-void feedbackDirection()
+CRGB feedbackLEDRingColorTemp[40];
+void feedbackLEDRingColor()
 {
-    // Aktive LED aus Winkel herausfinden
-    int activeLED = round(map(input.angle, -180, 180, 0, ledOuter));
-
-    // alle LEDs auf 0 stellen
-    setLED(
-        0, 
-        0, ledOuter,
-        180, 255, 92,
-        false);
-
-    // Ab bestimmter Krafteinwirkung aktiviere LED
-    if (input.force > 10)
+    // Abbrechen, wenn nichts los
+    if (!input.bottleTilted)
     {
-        // nur aktive LED aktivieren, den rest deaktivieren
-        setLED(
-            0, 
-            activeLED - 2, 4,
-            0, 255, 255,
-            false);
-        setLED(
-            0, 
-            activeLED - 2, 4,
-            0, 255, 255,
-            false);
+        return;
     }
-    else
-    {
-        // Alle LEDs deaktivieren
-        setLED(
-            0, 
-            0, ledOuter,
-            0, 0, 128,
-            false);
-    }
-}
 
-//
-void feedbackInteractionStart()
-{
+    if (input.bottleTilted)
+    {
+        Serial.print("oh wow, der FarbKreis aktiviert ");
+        Serial.print(input.active);
+
+        setLED(
+            0,
+            0, ledInner,
+            0, 0, 255,
+            false);
+
+        for (size_t i = 0; i < 8; i++)
+        {
+            if (round(input.active / 4) == i)
+            {
+                setLED(
+                    1,
+                    i * 4, 4,
+                    i * (360 / 8), 255, 255,
+                    false);
+            }
+            else
+            {
+                setLED(
+                    1,
+                    i * 4, 4,
+                    i * (360 / 8), 255, 100,
+                    false);
+            }
+        }
+    }
 }
 
 void loop()
 {
-    //
-    //
     // ##### Joystick
+    //
+    //
     //
     //
 
@@ -397,14 +402,14 @@ void loop()
 
     inputFunctionButton();
 
-    //
-    //
     // ##### LEDs
+    //
+    //
     //
     //
 
     feedbackLEDPressFeedback();
-    feedbackDirection();
+    feedbackLEDRingColor();
 
     // LED aktualisieren
     FastLED.show();
