@@ -268,6 +268,78 @@ void inputFunctionButton()
 //
 //
 
+int  feedbackLEDPressFeedbackVar = 0;
+CRGB feedbackLEDPressFeedbackTemp[40];
+void feedbackLEDPressFeedback()
+{
+    Serial.print("LEDInteractionStart = ");
+    Serial.print(feedbackLEDPressFeedbackVar);
+    Serial.print("\t");
+
+    // Abbrechen, wenn nichts los
+    if (feedbackLEDPressFeedbackVar == 0)
+    {
+        return;
+    }
+
+    if (feedbackLEDPressFeedbackVar == 1)
+    {
+        Serial.print("oh wow, LEDPressFeedback wurde aktiviert ");
+
+        // Zwischenstand speichern
+        for (size_t i = 0; i < sizeof(leds); i++)
+        {
+            feedbackLEDPressFeedbackTemp[i] = leds[i];
+        }
+
+        // alle LEDs aufläuchten lassen
+        setLED(
+            0,
+            0, ledInner,
+            0, 0, 255,
+            false);
+
+        setLED(
+            1,
+            0, ledOuter,
+            0, 0, 255,
+            false);
+
+        feedbackLEDPressFeedbackVar++;
+
+        return;
+    }
+
+    // Unterm Maximum?
+    if (feedbackLEDPressFeedbackVar <= 15)
+    {
+        Serial.print("Die linie geht hoch! - Florentin");
+        feedbackLEDPressFeedbackVar++;
+
+        return;
+    }
+
+    // Bei Maximum erreicht LEDs wieder zurücksetzen
+    Serial.print("Fertig");
+    setLED(
+        0,
+        0, ledInner,
+        0, 0, 0,
+        false);
+
+    setLED(
+        1,
+        0, ledOuter,
+        0, 0, 0,
+        false);
+
+    feedbackLEDPressFeedbackVar = 0;
+
+    // // Zustand zurücksetzen
+    // for (size_t i = 0; i < sizeof(leds); i++)
+    // {
+    //     leds[i] = feedbackLEDPressFeedbackTemp[i];
+    // }
 }
 
 void feedbackDirection()
@@ -331,9 +403,8 @@ void loop()
     //
     //
 
+    feedbackLEDPressFeedback();
     feedbackDirection();
-
-    feedbackInteractionStart();
 
     // LED aktualisieren
     FastLED.show();
