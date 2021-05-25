@@ -10,6 +10,9 @@
 #define joyX A1
 #define joyY A2
 
+int timer = 0;
+
+
 class Input
 {
 public:
@@ -665,6 +668,8 @@ void loop()
     // Serial.print("°\t f:");
     // Serial.print(input.force);
 
-    Serial.println("");
+    Serial.println(timer);
+    Serial.print(" ");
+    timer++;
     delay(100);
 }
