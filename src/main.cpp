@@ -7,26 +7,36 @@
 //
 //
 
-#define joyX A0
-#define joyY A1
+#define joyX A1
+#define joyY A2
 
 class Input
 {
 public:
+    bool bottleActive = false; // Ist Flasche auf Untersetzer?
+
+    // Joystick
     int posDefault[2];    // startpunkt bei laden, um ungenaue Startwerte auszugleichen
     int pos[2];           // positionsdaten - arrays müssen direkt mit Inhaltsmenge angegeben werden
     int posPercentage[2]; // position als %
     int angle;            // Winkel
     int active;           // Auf Winkel liegende Farbe
     int force;            // Kraft
-    bool bottleTilted;
-    bool bottleActive = true; // debug
-    bool buttonSensor;
+    bool bottleTilted = false;
+    bool bottleTilteState = false;
+    
+    // Buttons
+    int buttonSensor[2];
+    bool buttonVal[2];
+    bool buttonState[2];
+    int buttonOnOff[2];
+};
+
 };
 
 int debug = 500;
 
-Input input; // erstellt Objekt aus Klasse
+Input input;   // erstellt Objekt aus Klasse
 
 //
 //
@@ -58,9 +68,9 @@ void setup()
 {
     Serial.begin(9600);
 
-    //
-    //
     // ##### Joystick
+    //
+    //
     //
     //
 
@@ -68,8 +78,15 @@ void setup()
     input.posDefault[0] = analogRead(joyX);
     input.posDefault[1] = analogRead(joyY);
 
+    // ##### Buttons
     //
     //
+    //
+    //
+
+    input.buttonSensor[0] = 4;
+    input.buttonSensor[1] = 5;
+
     // ##### LEDs
     //
     //
@@ -250,28 +267,49 @@ void inputFunctionJoystick()
     {
         input.bottleTilted = false;
     }
+
+    // falls button gedrückt und state aus
+    if (input.bottleTilted && !input.bottleTilteState)
+    {
+        input.bottleTilteState = true;
+    }
+
+    // falls button nicht gedrückt und state an
+    else if (!input.bottleTilted && input.bottleTilteState)
+    {
+        input.bottleTilteState = false;
+    }
 }
 
 void inputFunctionButton()
 {
-    // Button gepresst oder nicht
-    input.buttonSensor = digitalRead(button);
-    Serial.print("sensorVal: ");
-    Serial.println(input.buttonSensor);
-    Serial.print("ledState: ");
-    Serial.println(input.buttonState);
-
-    Serial.print(input.buttonSensor);
-
-    // falls button nicht gedrückt und state an
-    else if (input.buttonSensor == 0 && input.buttonState == 1)
+    for (size_t i = 0; i < 2; i++)
     {
-        input.buttonState = 0;
-    }
+        // read the state of the pushbutton value:
+        input.buttonVal[i] = digitalRead(input.buttonSensor[i]);
 
-//
-//
+        // falls button gedrückt und state aus
+        if (input.buttonVal[i] && !input.buttonState[i])
+        {
+            input.buttonState[i] = true;
+            input.buttonOnOff[i] = !input.buttonOnOff[i];
+        }
+
+        // falls button nicht gedrückt und state an
+        else if (!input.buttonVal[i] && input.buttonState[i])
+        {
+            input.buttonState[i] = false;
+
+            Serial.print("button ");
+            Serial.print(i);
+            Serial.print(" pressed");
+        }
+    }
+}
+
 // ##### output
+//
+//
 //
 //
 
@@ -398,7 +436,6 @@ void loop()
     //
 
     inputFunctionJoystick();
-
     inputFunctionButton();
 
     // ##### LEDs
