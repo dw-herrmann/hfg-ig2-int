@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <FastLED.h>
 
 //
 //
@@ -41,13 +42,11 @@ Input input; // erstellt Objekt aus Klasse
 //
 //
 
-#include <FastLED.h>
-
 #define DATA_PIN 6
-#define NUM_LEDS 40
-int ledInner = 8;
+#define NUM_LEDS 53
+int ledInner = 21;
 int ledOuter = 32;
-#define BRIGHTNESS 32
+#define BRIGHTNESS 255
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
