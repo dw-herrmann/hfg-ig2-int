@@ -409,13 +409,41 @@ void inputFunctionReadVelo()
     input.analogValues[i][3] = map(input.analogValues[i][0], input.analogValues[i][1], input.analogValues[i][2], 0, 100);
   }
 
+  // flatten direction value
+  //
+  //
+  // get average of both neighbours and this
+  //
 
-class PartyModePlaceholder0
-{
-public:
-    int currentHue = 0;
-    bool currentBrightness = 0;
-};
+  for (int i = 0; i < input.veloCount; i++)
+  {
+    int newValue = 0;
+
+    // Element selbst
+    newValue += input.analogValues[i][3] * 10;
+
+    // Nachbar davor
+    if (i == 0)
+    {
+      newValue += input.analogValues[input.veloCount][3] * 7;
+    }
+    else
+    {
+      newValue += input.analogValues[i - 1][3] * 7; // 1 vor anfang
+    }
+
+    // Nachbar danach
+    if (i == input.veloCount - 1) // ende von Kreis
+    {
+      newValue += input.analogValues[input.veloCount][3] * 7;
+    }
+    else
+    {
+      newValue += input.analogValues[i + 1][3] * 7;
+    }
+
+    input.analogValues[i][4] = newValue / 24;
+  }
 
   // find highest value
   //
