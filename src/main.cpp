@@ -69,6 +69,17 @@ public:
       {0, 1023, 0, 0, 0}, // direction 7
   };
 
+  // zum Flatten
+  int analogValuesOriginal[8][5] = {
+      {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0}};
+
   int averagePercentage = 0;
   int analogPressedState = false;
   int veloPressed[2] = {0, 0};
@@ -406,6 +417,47 @@ void inputFunctionReadVelo()
     {
       digitalWrite(input.controlPin[ii], input.muxChannel[i][ii]);
     }
+
+    // flatten analog value
+    //
+    //
+    //
+    //
+
+    for (size_t ii = 5; ii > 0; ii--)
+    {
+      // push values one backwards
+      input.analogValuesOriginal[i][ii] = input.analogValuesOriginal[i][ii - 1];
+    }
+    input.analogValuesOriginal[i][0] = analogRead(input.SIG_pin);
+
+    input.analogValues[i][0] = (input.analogValuesOriginal[i][0] * 5 +
+                                input.analogValuesOriginal[i][1] * 4 +
+                                input.analogValuesOriginal[i][2] * 3 +
+                                input.analogValuesOriginal[i][3] * 2 +
+                                input.analogValuesOriginal[i][4] * 1) /
+                               15;
+
+    // get percentage value
+    //
+    //
+    //
+    //
+
+    // niedrigsten Wert finden
+    if (input.analogValues[i][0] < input.analogValues[i][1] && input.analogValues[i][0] != 0)
+    {
+      input.analogValues[i][1] = input.analogValues[i][0];
+    }
+
+    // höchsten Wert finden
+    if (input.analogValues[i][0] > input.analogValues[i][2])
+    {
+      input.analogValues[i][2] = input.analogValues[i][0];
+    }
+
+    input.analogValues[i][3] = map(input.analogValues[i][0], input.analogValues[i][1], input.analogValues[i][2], 0, 100);
+  }
 
 
 class PartyModePlaceholder0
@@ -799,8 +851,8 @@ void loop()
     //
     //
 
-    inputFunctionJoystick();
-    inputFunctionButton();
+  // inputFunctionJoystick();
+  // inputFunctionButton();
 
     // ##### LEDs
     //
