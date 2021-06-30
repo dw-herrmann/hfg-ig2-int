@@ -1,0 +1,28 @@
+#include <Arduino.h>
+#include <FastLED.h>
+
+const int inPin = A0;
+int analogvalue;
+void setup()
+{
+    Serial.begin(9600);
+    pinMode(inPin, INPUT);
+}
+
+void getAnalogArray()
+{
+    for (int o = 0; o < 6; o++)
+    {
+        analogvalue = analogRead(inPin);
+    }
+}
+
+void loop()
+{
+    Serial.println(" ");
+    getAnalogArray();
+    //hier Werte der Liste abfragen
+    Serial.print(analogvalue);
+    Serial.print("\t");
+    Serial.println("-");
+}
