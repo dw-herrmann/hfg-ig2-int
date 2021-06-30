@@ -488,76 +488,135 @@ void feedbackLEDIdle()
   if (!input.bottleActive)
   {
 
-        if (output.partyMode == 0)
-        {
-            Serial.print("mode 0");
+    if (output.partyMode == 1)
+    {
+      // Serial.print("mode 0");
 
-            // Wenn Kreis durchgelaufen ist
-            if (partyModePlaceholder0.currentHue >= 359)
-            {
-                partyModePlaceholder0.currentHue = 0;
-            }
+      // Außenring
+      setLED(
+          1,
+          0, ledOuter,
+          output.mainColor, 255, round(timer / 3 % 2) * 127 + 128,
+          // output.mainColor, 255, 255,
+          false);
 
-            // Stroboskop
-            if (partyModePlaceholder0.currentHue / 16)
-            {
-                partyModePlaceholder0.currentBrightness = !partyModePlaceholder0.currentBrightness;
-            }
+      // Innenring
+      setLED(
+          0,
+          0, ledInner,
+          output.mainColor, 255, round(timer / 3 % 2) * 127 + 128,
+          // output.mainColor, 255, 255,
+          false);
 
-            // Außenring
-            setLED(
-                1,
-                0, ledOuter,
-                output.mainColor, 255, partyModePlaceholder0.currentBrightness * 127,
-                false);
-
-            // Innenring
-            setLED(
-                0,
-                0, ledInner,
-                output.mainColor, 255, partyModePlaceholder0.currentBrightness * 255,
-                false);
-
-            partyModePlaceholder0.currentHue++;
-            return;
-        }
-
-        if (output.partyMode == 1)
-        {
-            Serial.print("mode 1");
-
-            if (partyModePlaceholder1.currentBrightness >= 255)
-            {
-                // Brightness Fade in
-                partyModePlaceholder1.currentBrightness = 63;
-
-                // Saturation on off
-                partyModePlaceholder1.currentSaturation = !partyModePlaceholder1.currentSaturation;
-            }
-            partyModePlaceholder1.currentBrightness = partyModePlaceholder1.currentBrightness + 32;
-
-            // Außenring
-            setLED(
-                1,
-                0, ledOuter,
-                output.mainColor, partyModePlaceholder1.currentSaturation * 255, partyModePlaceholder1.currentBrightness / 2,
-                false);
-
-            // Innenring
-            setLED(
-                0,
-                0, ledInner,
-                output.mainColor, partyModePlaceholder1.currentSaturation * 255, partyModePlaceholder1.currentBrightness,
-                false);
-
-            Serial.print(" B: ");
-            Serial.print(partyModePlaceholder1.currentBrightness);
-            Serial.print(" S: ");
-            Serial.print(partyModePlaceholder1.currentSaturation);
-
-            return;
-        }
+      return;
     }
+
+    if (output.partyMode == 0)
+    {
+      // Serial.print("mode 1");
+
+      // if (partyModePlaceholder1.currentBrightness >= 255)
+      // {
+      //     // Brightness Fade in
+      //     partyModePlaceholder1.currentBrightness = 63;
+
+      //     // Saturation on off
+      //     partyModePlaceholder1.currentSaturation = !partyModePlaceholder1.currentSaturation;
+      // }
+      // partyModePlaceholder1.currentBrightness = partyModePlaceholder1.currentBrightness + 32;
+
+      // Außenring
+      setLED(
+          1,
+          0, ledOuter,
+          output.mainColor, timer / 16 % 2 * 255, timer % 16 * 12 + 64,
+          false);
+
+      // Innenring
+      setLED(
+          0,
+          0, ledInner,
+          output.mainColor, (timer + 16) / 16 % 2 * 255, 255,
+          // output.mainColor, (timer + 16 ) / 16 % 2 * 255, timer + 16 % 16 * 12 + 64,
+          false);
+
+      // Serial.print(" B: ");
+      // Serial.print(partyModePlaceholder1.currentBrightness);
+      // Serial.print(" S: ");
+      // Serial.print(partyModePlaceholder1.currentSaturation);
+
+      return;
+    }
+
+    if (output.partyMode == 2)
+    {
+      // Serial.print("mode 2");
+
+      int m2colors[3] = {
+          output.mainColor,
+          (output.mainColor + 120) % 359,
+          (output.mainColor + 240) % 359};
+
+      // Innenring
+      setLED(
+          0,
+          0, ledInner,
+          // 3 Farbwechseln pro Umdrehung,
+          m2colors[timer / 32 % 3], 255, (timer * ledOuter) % 255,
+          false);
+
+      Serial.print(" ");
+      Serial.print(timer / 32 % 3);
+      Serial.print(" ");
+
+      // Außenring
+      setLED(
+          1,
+          timer % ledOuter, ledOuter / 3,
+          m2colors[0], 255, 255,
+          false);
+
+      setLED(
+          1,
+          (timer % ledOuter) + ledOuter / 3, ledOuter / 3,
+          m2colors[1], 255, 255,
+          false);
+
+      setLED(
+          1,
+          (timer % ledOuter) + ledOuter / 3 * 2, ledOuter / 3,
+          m2colors[2], 255, 255,
+          false);
+
+      return;
+    }
+
+    if (output.partyMode == 3)
+    {
+      // Serial.print("mode 3");
+
+      int m2colors[3] = {
+          output.mainColor,
+          (output.mainColor + 120) % 359,
+          (output.mainColor + 240) % 359};
+
+      // Innenring
+      setLED(
+          0,
+          0, ledInner,
+          output.mainColor, partyModePlaceholder1.currentSaturation * 255, partyModePlaceholder1.currentBrightness,
+          false);
+
+      // Außenring
+      setLED(
+          1,
+          timer % ledOuter, ledOuter / 3,
+          m2colors[0], 255, 255,
+          false);
+
+      return;
+    }
+  }
 }
 
 int innerBrightness = 200;
