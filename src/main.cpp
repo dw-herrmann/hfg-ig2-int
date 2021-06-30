@@ -962,41 +962,43 @@ void loop()
   inputFunctionReadVelo();
 
   // Velo
-  // Serial.print("before: ");
-
-  // for (int i = 0; i < input.veloCount; i++)
-  // {
-  //   // Serial.print(input.veloCables[i]);
-  //   // Serial.print("  ");
-  //   Serial.print(input.analogValues[i][3]);
-  //   // Serial.print(" / ");
-  //   // Serial.print(input.analogValues[i][4]);
-  //   // Serial.print("% / ");
-  //   // Serial.print(input.analogValuesOriginal[i][0]);
-  //   Serial.print(" – ");
-  //   // Serial.print(input.analogValues[i][0]);
-  //   // Serial.print("-");
-  //   // Serial.print(input.analogValues[i][1]);
-  //   // Serial.print("-");
-  //   // Serial.print(input.analogValues[i][2]);
-  // }
-
-  // Serial.print("\t\t after: ");
-  for (int i = 0; i < input.veloCount; i++)
+  if (0) // print values
   {
-    Serial.print(input.analogValues[i][4]);
-    Serial.print("\t");
+    for (int i = 0; i < input.veloCount; i++)
+    {
+      if (0) // cable and …
+      {
+        Serial.print(input.veloCables[i]);
+        Serial.print("  ");
+
+        // Serial.print(input.analogValuesOriginal[i][0]); // original values pure
+        // Serial.print(input.analogValues[i][0]); // original values flattened
+        // Serial.print(input.analogValues[i][3]); // percentage
+        Serial.print(input.analogValues[i][4]); // percentage flattened (direction)
+
+        Serial.print("\t");
+      }
+
+      if (0) // sorted
+      {
+        for (size_t i = 0; i < input.veloCount; i++)
+        {
+          Serial.print(input.analogValuesSorted[i][0]);
+          Serial.print(" = ");
+          Serial.print(input.analogValuesSorted[i][1]);
+          Serial.print("\t");
+        }
+      }
+    }
+
+    if (0) // average
+    {
+      Serial.print(" avg: ");
+      Serial.print(input.averagePercentage);
+      Serial.print("\t");
+    }
   }
 
-  // Serial.print(" avg: ");
-  // Serial.print(input.averagePercentage);
-  // Serial.print("\t");
-
-  // for (size_t i = 0; i < 5; i++)
-  // {
-  //   Serial.print("\tV: ");
-  //   Serial.print(input.analogValuesOriginal[1][i]);
-  // }
 
   // ##### Joystick
   //
