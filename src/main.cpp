@@ -16,7 +16,7 @@ int timer = 0;
 class Input
 {
 public:
-    bool bottleActive = false; // Ist Flasche auf Untersetzer?
+  bool bottleActive = false; // Ist Flasche auf Untersetzer?
   // Velo
   // - Mux control pins
   int s0 = 8;
