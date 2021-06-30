@@ -84,29 +84,26 @@ public:
   int analogPressedState = false;
   int veloPressed[2] = {0, 0};
 
-    // Joystick
-    int posDefault[2];    // startpunkt bei laden, um ungenaue Startwerte auszugleichen
-    int pos[2];           // positionsdaten - arrays müssen direkt mit Inhaltsmenge angegeben werden
-    int posPercentage[2]; // position als %
-    int angle;            // Winkel
-    int active;           // Auf Winkel liegende Farbe
-    int force;            // Kraft
-    bool bottleTilted = false;
-    bool bottleTilteState = false;
+  // Joystick
+  int posDefault[2];    // startpunkt bei laden, um ungenaue Startwerte auszugleichen
+  int pos[2];           // positionsdaten - arrays müssen direkt mit Inhaltsmenge angegeben werden
+  int posPercentage[2]; // position als %
+  int angle;            // Winkel
+  int active;           // Auf Winkel liegende Farbe
+  int force;            // Kraft
+  bool bottleTilted = false;
+  bool bottleTilteState = false;
 
     // Buttons
-    int buttonSensor[2];
-    bool buttonVal[2];
-    bool buttonState[2];
-    int buttonOnOff[2];
+  bool buttonVal[2];
+  bool buttonState[2];
 };
 
 class Output
 {
 public:
-    int partyMode = 0;
-    int partyModeColor[2];
-    int mainColor = 0;
+  int partyMode = 0;
+  int mainColor = 0;
 };
 
 int debug = 500;
@@ -126,21 +123,21 @@ Output output; // erstellt Objekt aus Klasse
 //
 //
 
-#define DATA_PIN 6
-#define NUM_LEDS 53
-int ledInner = 21;
-int ledOuter = 32;
-#define BRIGHTNESS 255
+#define DATA_PIN 6    // LED Steuerung kommt in Pin 6
+int ledInner = 21;    // 21 LEDs für den Inneren
+int ledOuter = 32;    // 32 LEDs für den Äußeren
+int ledStrip = 10;    // X LEDs für LED Kette
+#define NUM_LEDS 63   // Gesamtanzahl an LEDs ausrechnen
+#define BRIGHTNESS 32 // Helligkeit des Rings
+
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
-// CHSV leds[NUM_LEDS];
-
 #define UPDATES_PER_SECOND 100
 
 void setup()
 {
-    Serial.begin(9600);
+  Serial.begin(9600);
 
   // Velo
   //
@@ -158,173 +155,123 @@ void setup()
   digitalWrite(input.s2, LOW);
   digitalWrite(input.s3, LOW);
 
-    // ##### Joystick
-    //
-    //
-    //
-    //
+  // ##### Joystick
+  //
+  //
+  //
+  //
 
-    // Eingabe-Werte Ausgangszustand feststellen
-    input.posDefault[0] = analogRead(joyX);
-    input.posDefault[1] = analogRead(joyY);
+  // Eingabe-Werte Ausgangszustand feststellen
+  input.posDefault[0] = analogRead(joyX);
+  input.posDefault[1] = analogRead(joyY);
 
-    // ##### Buttons
-    //
-    //
-    //
-    //
+  // ##### Buttons
+  //
+  //
+  //
+  //
 
-    input.buttonSensor[0] = 4;
-    input.buttonSensor[1] = 5;
+  input.buttonSensor[0] = 4;
+  input.buttonSensor[1] = 5;
 
-    // ##### LEDs
-    //
-    //
-    //
-    //
+  // ##### LEDs
+  //
+  //
+  //
+  //
 
-    output.partyModeColor[0] = 0;
-    output.partyModeColor[1] = 180;
+  delay(3000); // power-up safety delay
 
-    delay(3000); // power-up safety delay
+  FastLED.show();
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
+  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.setBrightness(BRIGHTNESS);
 
-    FastLED.show();
-    FastLED.delay(1000 / UPDATES_PER_SECOND);
-    FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-    FastLED.setBrightness(BRIGHTNESS);
-
-    Serial.println("––––––––––––––––––––––");
+  Serial.println("––––––––––––––––––––––");
 }
 
 // Farben einstellen
-void setLED(int ledRing, int firstLED, int amount, int color0, int color1, int color2, bool printToConsole)
+void setLED(int ledRange, int firstLED, int amount, int color0, int color1, int color2, bool printToConsole)
 {
-    if (ledRing == 0)
+
+  int maxLEDs;    // Gesamtanzahl der LEDs von ausgewählter ledRange
+  int addToI = 0; // erste LED von ausgewählter ledRange
+
+  if (ledRange == 0) // innerer LED Ring
+  {
+    maxLEDs = ledInner;
+  }
+  else if (ledRange == 1) // äußerer LED Ring
+  {
+    addToI = ledInner;
+    maxLEDs = ledOuter;
+  }
+  else if (ledRange == 2) // beide LED Ringe
+  {
+    maxLEDs = ledInner + ledOuter;
+  }
+  else if (ledRange == 3) // LED Strip
+  {
+    addToI = ledInner + ledOuter;
+    maxLEDs = ledInner + ledOuter + ledStrip;
+  }
+
+  // Start und Ende festlegen
+  int startLED = firstLED % maxLEDs;
+  int endLED = (firstLED + amount) % maxLEDs;
+
+  // Falls negativ, mach Zahl korrekt
+  if (startLED < 0)
+  {
+    startLED = startLED + maxLEDs;
+  }
+
+  if (endLED <= 0)
+  {
+    endLED = endLED + maxLEDs;
+  }
+
+  // Wenn die erstel LED kleiner als die Letzte ist
+  if (startLED < endLED)
+  {
+    // Alle LEDs in Bereich einfärben
+    for (size_t i = startLED; i < endLED; i++)
     {
-        /* code */
-
-        int maxLEDs = ledInner;
-
-        // Start und Ende festlegen
-        int startLED = firstLED % maxLEDs;
-        int endLED = (firstLED + amount) % maxLEDs;
-
-        // Falls negativ, mach Zahl korrekt
-        if (startLED <= 0)
-        {
-            startLED = startLED + maxLEDs;
-        }
-
-        if (endLED <= 0)
-        {
-            endLED = endLED + maxLEDs;
-        }
-
-        // Wenn die erstel LED kleiner als die Letzte ist
-        if (startLED < endLED)
-        {
-            // Alle LEDs in Bereich einfärben
-            for (size_t i = startLED; i < endLED; i++)
-            {
-                leds[i].setHSV(color0, color1, color2);
-            }
-
-            if (printToConsole)
-            {
-                Serial.print(startLED);
-                Serial.print("-");
-                Serial.print(endLED);
-            }
-        }
-        else
-        {
-            // Alle LEDs von der ersten bis LED anzahl einfärben …
-            for (size_t i = startLED; i < maxLEDs; i++)
-            {
-                leds[i].setHSV(color0, color1, color2);
-            }
-
-            // … und alle restlichen von 0 bis Rest einfärben
-            for (size_t i = 0; i < endLED; i++)
-            {
-                leds[i].setHSV(color0, color1, color2);
-            }
-
-            if (printToConsole)
-            {
-                Serial.print(endLED);
-                Serial.print("-");
-                Serial.print(maxLEDs);
-                Serial.print(" & ");
-                Serial.print(0);
-                Serial.print("-");
-                Serial.print(endLED);
-            }
-        }
+      leds[i + addToI].setHSV(color0, color1, color2);
     }
-    else
+
+    if (printToConsole)
     {
-        int maxLEDs = ledOuter;
-
-        // Start und Ende festlegen
-        int startLED = firstLED % maxLEDs;
-        int endLED = (firstLED + amount) % maxLEDs;
-
-        // Falls negativ, mach Zahl korrekt
-        if (startLED <= 0)
-        {
-            startLED = startLED + maxLEDs;
-        }
-
-        if (endLED <= 0)
-        {
-            endLED = endLED + maxLEDs;
-        }
-
-        // Wenn die erstel LED kleiner als die Letzte ist
-        if (startLED < endLED)
-        {
-
-            // Alle LEDs in Bereich einfärben
-            for (size_t i = startLED; i < endLED; i++)
-            {
-                leds[i + ledInner].setHSV(color0, color1, color2);
-            }
-
-            if (printToConsole)
-            {
-                Serial.print(startLED);
-                Serial.print("-");
-                Serial.print(endLED);
-            }
-        }
-        else
-        {
-            // Alle LEDs von der ersten bis LED anzahl einfärben …
-            for (size_t i = startLED; i < maxLEDs; i++)
-            {
-                leds[i + ledInner].setHSV(color0, color1, color2);
-            }
-
-            // … und alle restlichen von 0 bis Rest einfärben
-            for (size_t i = 0; i < endLED; i++)
-            {
-                leds[i + ledInner].setHSV(color0, color1, color2);
-            }
-
-            if (printToConsole)
-            {
-                Serial.print(endLED);
-                Serial.print("-");
-                Serial.print(maxLEDs);
-                Serial.print(" & ");
-
-                Serial.print(0);
-                Serial.print("-");
-                Serial.print(endLED);
-            }
-        }
+      Serial.print(startLED);
+      Serial.print("-");
+      Serial.print(endLED);
     }
+  }
+  else
+  {
+    // Alle LEDs von der ersten bis LED anzahl einfärben …
+    for (size_t i = startLED; i < maxLEDs; i++)
+    {
+      leds[i + addToI].setHSV(color0, color1, color2);
+    }
+
+    // … und alle restlichen von 0 bis Rest einfärben
+    for (size_t i = 0; i < endLED; i++)
+    {
+      leds[i + addToI].setHSV(color0, color1, color2);
+    }
+
+    if (printToConsole)
+    {
+      Serial.print(endLED);
+      Serial.print("-");
+      Serial.print(maxLEDs);
+      Serial.print(" & ");
+      Serial.print(0);
+      Serial.print("-");
+      Serial.print(endLED);
+    }
+  }
 }
 
 // ##### input
@@ -335,71 +282,71 @@ void setLED(int ledRing, int firstLED, int amount, int color0, int color1, int c
 
 void inputFunctionJoystick()
 {
-    // Eingabe-Werte empfangen
-    input.pos[0] = analogRead(joyX);
-    input.pos[1] = analogRead(joyY);
+  // Eingabe-Werte empfangen
+  input.pos[0] = analogRead(joyX);
+  input.pos[1] = analogRead(joyY);
 
-    // Werte in % umrechnen
-    input.posPercentage[0] = map(input.pos[0], input.posDefault[0], 1023, 0, 100);
-    input.posPercentage[1] = map(input.pos[1], input.posDefault[1], 1023, 0, 100);
+  // Werte in % umrechnen
+  input.posPercentage[0] = map(input.pos[0], input.posDefault[0], 1023, 0, 100);
+  input.posPercentage[1] = map(input.pos[1], input.posDefault[1], 1023, 0, 100);
 
-    // Winkel herausfinden
-    input.angle = -atan2(
-                      input.posPercentage[0],
-                      input.posPercentage[1]) *
-                  180 / PI;
+  // Winkel herausfinden
+  input.angle = -atan2(
+                    input.posPercentage[0],
+                    input.posPercentage[1]) *
+                180 / PI;
 
-    // Aktive LED aus Winkel herausfinden
-    input.active = round(map(input.angle, 180, -180, 0, ledOuter));
+  // Aktive LED aus Winkel herausfinden
+  input.active = round(map(input.angle, 180, -180, 0, ledOuter));
 
-    // Krafteinwirkung aus Joystick herausfinden
-    input.force = (fabs(input.posPercentage[0]) + fabs(input.posPercentage[1])) / 2;
-    if (input.force > 20)
-    {
-        input.bottleTilted = true;
-    }
-    else
-    {
-        input.bottleTilted = false;
-    }
+  // Krafteinwirkung aus Joystick herausfinden
+  input.force = (fabs(input.posPercentage[0]) + fabs(input.posPercentage[1])) / 2;
+  if (input.force > 20)
+  {
+    input.bottleTilted = true;
+  }
+  else
+  {
+    input.bottleTilted = false;
+  }
 
-    // falls button gedrückt und state aus
-    if (input.bottleTilted && !input.bottleTilteState)
-    {
-        input.bottleTilteState = true;
-    }
+  // falls button gedrückt und state aus
+  if (input.bottleTilted && !input.bottleTilteState)
+  {
+    input.bottleTilteState = true;
+  }
 
-    // falls button nicht gedrückt und state an
-    else if (!input.bottleTilted && input.bottleTilteState)
-    {
-        input.bottleTilteState = false;
-    }
+  // falls button nicht gedrückt und state an
+  else if (!input.bottleTilted && input.bottleTilteState)
+  {
+    input.bottleTilteState = false;
+  }
 }
 
 void inputFunctionButton()
 {
-    for (size_t i = 0; i < 2; i++)
+  for (size_t i = 0; i < 2; i++)
+  {
+    // read the state of the pushbutton value:
+    input.buttonVal[i] = digitalRead(input.buttonSensor[i]);
+
+    // falls button gedrückt und state aus
+    if (input.buttonVal[i] && !input.buttonState[i])
     {
-        // read the state of the pushbutton value:
-        input.buttonVal[i] = digitalRead(input.buttonSensor[i]);
-
-        // falls button gedrückt und state aus
-        if (input.buttonVal[i] && !input.buttonState[i])
-        {
-            input.buttonState[i] = true;
-            input.buttonOnOff[i] = !input.buttonOnOff[i];
-        }
-
-        // falls button nicht gedrückt und state an
-        else if (!input.buttonVal[i] && input.buttonState[i])
-        {
-            input.buttonState[i] = false;
-
-            Serial.print("button ");
-            Serial.print(i);
-            Serial.print(" pressed");
-        }
+      input.buttonState[i] = true;
+      input.veloPressed[i] = !input.veloPressed[i];
     }
+
+    // falls button nicht gedrückt und state an
+    else if (!input.buttonVal[i] && input.buttonState[i])
+    {
+      input.buttonState[i] = false;
+
+      Serial.print("button ");
+      Serial.print(i);
+      Serial.print(" pressed");
+    }
+  }
 }
 
 void inputFunctionReadVelo()
@@ -518,20 +465,25 @@ public:
   }
 }
 
+// ##### output
+//
+//
+//
+//
 
 class PartyModePlaceholder1
 {
 public:
-    int currentBrightness = 0;
-    bool currentSaturation = true;
+  int currentBrightness = 0;
+  bool currentSaturation = true;
 };
 
 PartyModePlaceholder1 partyModePlaceholder1; // erstellt Objekt aus Klasse
 
 void feedbackLEDIdle()
 {
-    if (!input.bottleActive)
-    {
+  if (!input.bottleActive)
+  {
 
         if (output.partyMode == 0)
         {
@@ -610,94 +562,103 @@ int innerBrightnessDirection = 1;
 
 void feedbackLEDInteractionStart()
 {
-    if (!input.bottleActive)
+  if (!input.bottleActive)
+  {
+    int maximum = 10;
+
+    Serial.print(input.veloPressed[0]);
+    // Abbrechen, wenn nichts los
+    if (input.veloPressed[0] == 0)
     {
-        int maximum = 5;
+      return;
+    }
 
-        // Abbrechen, wenn nichts los
-        if (input.buttonOnOff[0] == 0)
-        {
-            return;
-        }
+    if (input.veloPressed[0] == 1)
+    {
+      Serial.print("oh wow, feedbackLEDInteractionStart wurde aktiviert ");
 
-        if (input.buttonOnOff[0] == 1)
-        {
-            Serial.print("oh wow, feedbackLEDInteractionStart wurde aktiviert ");
+      input.veloPressed[0]++;
+
+      return;
+    }
+
+    // Unterm Maximum?
+    if (input.veloPressed[0] <= maximum)
+    {
+      Serial.print("Die linie geht hoch! - Florentin ");
+
+      // alle LEDs aufläuchten lassen
+      setLED(
+          0,
+          0, ledInner,
+          0, 0, 255,
+          false);
+
+      setLED(
+          1,
+          0, ledOuter,
+          0, 0, 255,
+          false);
 
             input.buttonOnOff[0]++;
 
-            return;
-        }
-
-        // Unterm Maximum?
-        if (input.buttonOnOff[0] <= maximum)
-        {
-            Serial.print("Die linie geht hoch! - Florentin");
-
-            // alle LEDs aufläuchten lassen
-            setLED(
-                0,
-                0, ledInner,
-                0, 0, 255,
-                false);
-
-            setLED(
-                1,
-                0, ledOuter,
-                0, 0, 255,
-                false);
-
-            input.buttonOnOff[0]++;
-
-            return;
-        }
-
-        // Bei Maximum erreicht LEDs wieder zurücksetzen
-        Serial.print("Fertig");
-
-        input.buttonOnOff[0] = 0;
-        input.bottleActive = true;
-
-        return;
+      return;
     }
 
-    if (input.buttonOnOff[0])
-    {
-        input.bottleActive = false;
-        input.buttonOnOff[0] = 0;
-    }
+    // Bei Maximum erreicht LEDs wieder zurücksetzen
+    Serial.print("Fertig");
+
+    input.veloPressed[0] = 0;
+    input.bottleActive = true;
+
+    return;
+  }
+
+  if (input.veloPressed[0])
+  {
+    input.bottleActive = false;
+    input.veloPressed[0] = 0;
+  }
 }
 
-void feedbackLEDRingColor()
+void feedbackLEDRingSelect()
 {
-    // Wenn Flasche aktiv drauf
-    if (input.bottleActive)
+  // Wenn Flasche aktiv drauf
+  if (input.bottleActive)
+  {
+    // Wird aktuell Farbe ausgewählt oder …
+    if (input.selectMode == 0)
     {
-        // Pulsieren innerer Kreis
-        if (innerBrightness <= 63 or innerBrightness >= 255)
-        {
-            innerBrightnessDirection = innerBrightnessDirection * -1;
-        }
-        innerBrightness = innerBrightness + innerBrightnessDirection * 16;
+      // Farbe von gewählter Richtung verstärken
+      if (input.bottleTilted)
+      { // Falls Flasche gekippt
+        Serial.print("oh wow, die Flasche ist geneigt ");
+        Serial.print(input.active);
 
-        setLED(
-            0,
-            0, ledInner,
-            output.partyModeColor[output.partyMode], 255, innerBrightness,
-            false);
-        
-        // Farbrichtungen anzeigen
-        if (!input.bottleTilted)
+        // ledOuter -> Farbkreis
+        // ledInner -> gekippte Farbe
+
+        for (size_t i = 0; i < input.veloCount; i++)
         {
-            // Farbkreis auf LED Ring
-            for (size_t i = 0; i < 8; i++)
-            {
-                setLED(
-                    1,
-                    i * 4, 4,
-                    i * (360 / 8), 255, 255,
-                    false);
-            }
+          if (input.active == i)
+          {
+            setLED(
+                1,
+                i * 4, 4,
+                i * (360 / input.veloCount), 255, 255,
+                false);
+
+            output.mainColor = i * (360 / input.veloCount);
+          }
+          else
+          {
+            setLED(
+                1,
+                i * 4, 4,
+                i * (360 / input.veloCount), 255, 100,
+                false);
+          }
+        }
 
             // Innenren Ring weiß färben
             setLED(
@@ -707,114 +668,142 @@ void feedbackLEDRingColor()
                 false);
 
             return;
-        }
+      }
 
-        // Farbe von gewählter Richtung verstärken
-        if (input.bottleTilted)
+      return;
+    }
+
+    if (input.selectMode == 1)
+    {
+      Serial.print("input.selectMode "); //debug
+      Serial.print(input.selectMode);    //debug
+      Serial.print(" ");                 //debug
+
+      // Abstandsfarbe
+      setLED(
+          1,
+          0, ledOuter,
+          0, 255, 127,
+          false);
+
+      // 4 Richtungen für Modi zeigen
+      if (input.bottleTilted)
+      { // Falls Flasche gekippt
+        Serial.print("geneigt ");
+        Serial.print(input.active);
+
+        // ledOuter -> 1 schwarz, 6 weiß, 1 schwarz
+        // ledInner -> modus
+
+        setLED(
+            0,
+            0, ledInner,
+            0, 0, 127,
+            false);
+
+        for (size_t i = 0; i < 4; i++)
         {
-            Serial.print("oh wow, die Flasche ist geneigt ");
-            Serial.print(input.active);
-
-            for (size_t i = 0; i < 8; i++)
-            {
-                if (round(input.active / 4) == i)
-                {
-                    setLED(
-                        1,
-                        i * 4, 4,
-                        i * (360 / 8), 255, 255,
-                        false);
-
-                    output.mainColor = i * (360 / 8);
-                }
-                else
-                {
-                    setLED(
-                        1,
-                        i * 4, 4,
-                        i * (360 / 8), 255, 100,
-                        false);
-                }
-            }
-
-            // Innere LED weiß einfärben
+          if (input.active / (ledOuter / 4) == i)
+          {
             setLED(
-                0,
-                0, ledInner,
-                0, 0, 64,
+                1,
+                (i * input.veloCount) + 1, (ledOuter / 4) - 2,
+                0, 0, 255,
                 false);
 
-            // // Innere LED in Main Color einfärben
-            // setLED(
-            //     0,
-            //     0, ledInner,
-            //     output.mainColor, 255, 255,
-            //     false);
+            output.partyMode = i;
+          }
+          else
+          {
+            setLED(
+                1,
+                (i * input.veloCount) + 1, (ledOuter / 4) - 2,
+                0, 0, 127,
+                false);
+          }
         }
+
+        return;
+      } // falls nicht:
+
+      // ledInner -> grau
+      // ledOuter -> Farbkreis
+      setLED(
+          0,
+          0, ledInner,
+          0, 0, 125,
+          false);
+
+      for (size_t i = 0; i < 4; i++)
+      {
+        setLED(
+            1,
+            (i * input.veloCount) + 1, (ledOuter / 4) - 2,
+            0, 0, 255,
+            false);
+      }
+
+      return;
     }
+  }
 }
 
 void feedbackLEDPressFeedback()
 {
-    // Wenn Flasche aktiv drauf
-    if (input.bottleActive)
+  // Wenn Flasche aktiv drauf
+  if (input.bottleActive)
+  {
+
+    int maximum = 5;
+
+    // Abbrechen, wenn nichts los
+    if (input.veloPressed[1] == 0)
     {
-
-        int maximum = 15;
-
-        // Abbrechen, wenn nichts los
-        if (input.buttonOnOff[1] == 0)
-        {
-            return;
-        }
-
-        if (input.buttonOnOff[1] == 1)
-        {
-            Serial.print("oh wow, LEDPressFeedback wurde aktiviert ");
-
-            input.buttonOnOff[1]++;
-
-            return;
-        }
-
-        // Unterm Maximum?
-        if (input.buttonOnOff[1] <= maximum)
-        {
-            Serial.print("Die linie geht hoch! - Florentin");
-
-            // alle LEDs aufläuchten lassen
-            setLED(
-                0,
-                0, ledInner,
-                0, 0, 255,
-                false);
-
-            setLED(
-                1,
-                0, ledOuter,
-                0, 0, 255,
-                false);
-
-            input.buttonOnOff[1]++;
-
-            return;
-        }
-
-        // Partymode wechseln
-        if (output.partyMode >= 1)
-        {
-            output.partyMode = 0;
-        }
-        else
-        {
-            output.partyMode++;
-        }
-
-        // Bei Maximum erreicht LEDs wieder zurücksetzen
-        Serial.print("Fertig");
-
-        input.buttonOnOff[1] = 0;
+      return;
     }
+
+    if (input.veloPressed[1] == 1)
+    {
+      Serial.print("oh wow, LEDPressFeedback wurde aktiviert ");
+
+      input.veloPressed[1]++;
+
+      return;
+    }
+
+    // Unterm Maximum?
+    if (input.veloPressed[1] <= maximum)
+    {
+      Serial.print("Die linie geht hoch! - Florentin");
+
+      // ledOuter -> weiß
+      // ledInner -> weiß
+
+      // alle LEDs aufläuchten lassen
+      setLED(
+          0,
+          0, ledInner,
+          0, 0, 127,
+          false);
+
+      // Weißer außenring
+      setLED(
+          1,
+          0, ledOuter,
+          0, 0, 255,
+          false);
+
+      input.veloPressed[1]++;
+
+      return;
+    }
+
+    // Bei Maximum erreicht LEDs wieder zurücksetzen
+    Serial.print("Fertig");
+    input.selectMode = !input.selectMode;
+
+    input.veloPressed[1] = 0;
+  }
 }
 
 void loop()
@@ -845,41 +834,31 @@ void loop()
     Serial.print(input.analogValuesOriginal[1][i]);
   }
 
-    // ##### Joystick
-    //
-    //
-    //
-    //
+  // ##### Joystick
+  //
+  //
+  //
+  //
 
   // inputFunctionJoystick();
   // inputFunctionButton();
 
-    // ##### LEDs
-    //
-    //
-    //
-    //
+  // ##### LEDs
+  //
+  //
+  //
+  //
 
-    feedbackLEDIdle();
-    feedbackLEDInteractionStart();
-    feedbackLEDRingColor();
-    feedbackLEDPressFeedback();
+  feedbackLEDIdle();
 
-    // LED aktualisieren
-    FastLED.show();
+  feedbackLEDInteractionStart();
+  feedbackLEDPressFeedback();
 
-    //print the values with to plot or view
-    // Serial.print("x:");
-    // Serial.print(input.posPercentage[0]);
-    // Serial.print("\t y:");
-    // Serial.print(input.posPercentage[1]);
-    // Serial.print("%\t a:");
-    // Serial.print(input.angle);
-    // Serial.print("°\t f:");
-    // Serial.print(input.force);
+  // LED aktualisieren
+  FastLED.show();
 
-    Serial.println(timer);
-    Serial.print(" ");
-    timer++;
-    delay(100);
+  Serial.println("");
+  // Serial.print(timer);
+  timer++;
+  delay(100);
 }
