@@ -17,6 +17,61 @@ class Input
 {
 public:
     bool bottleActive = false; // Ist Flasche auf Untersetzer?
+  // Velo
+  // - Mux control pins
+  int s0 = 8;
+  int s1 = 9;
+  int s2 = 10;
+  int s3 = 11;
+
+  // - Mux in "SIG" pin
+  int SIG_pin = 0;
+  int controlPin[4] = {s0, s1, s2, s3};
+  int muxChannel[16][4] = {
+      {0, 0, 0, 0}, //channel 0
+      {1, 0, 0, 0}, //channel 1
+      {0, 1, 0, 0}, //channel 2
+      {1, 1, 0, 0}, //channel 3
+      {0, 0, 1, 0}, //channel 4
+      {1, 0, 1, 0}, //channel 5
+      {0, 1, 1, 0}, //channel 6
+      {1, 1, 1, 0}, //channel 7
+      {0, 0, 0, 1}, //channel 8
+      {1, 0, 0, 1}, //channel 9
+      {0, 1, 0, 1}, //channel 10
+      {1, 1, 0, 1}, //channel 11
+      {0, 0, 1, 1}, //channel 12
+      {1, 0, 1, 1}, //channel 13
+      {0, 1, 1, 1}, //channel 14
+      {1, 1, 1, 1}  //channel 15
+  };
+
+  int veloCount = 8;
+  const String veloCables[8] = {
+      "orange",
+      "  gelb",
+      " gruen",
+      "  blau",
+      "violet",
+      " weiss",
+      "  grau",
+      " braun"};
+
+  // jetzt (flattened), min, max, percentage, direction
+  int analogValues[8][5] = {
+      {0, 1023, 0, 0, 0}, // direction 0
+      {0, 1023, 0, 0, 0}, // direction 1
+      {0, 1023, 0, 0, 0}, // direction 2
+      {0, 1023, 0, 0, 0}, // direction 3
+      {0, 1023, 0, 0, 0}, // direction 4
+      {0, 1023, 0, 0, 0}, // direction 5
+      {0, 1023, 0, 0, 0}, // direction 6
+      {0, 1023, 0, 0, 0}, // direction 7
+  };
+
+  int averagePercentage = 0;
+  int analogPressedState = false;
+  int veloPressed[2] = {0, 0};
 
     // Joystick
     int posDefault[2];    // startpunkt bei laden, um ungenaue Startwerte auszugleichen
@@ -75,6 +130,22 @@ CRGB leds[NUM_LEDS];
 void setup()
 {
     Serial.begin(9600);
+
+  // Velo
+  //
+  //
+  //
+  //
+
+  pinMode(input.s0, OUTPUT);
+  pinMode(input.s1, OUTPUT);
+  pinMode(input.s2, OUTPUT);
+  pinMode(input.s3, OUTPUT);
+
+  digitalWrite(input.s0, LOW);
+  digitalWrite(input.s1, LOW);
+  digitalWrite(input.s2, LOW);
+  digitalWrite(input.s3, LOW);
 
     // ##### Joystick
     //
@@ -320,11 +391,22 @@ void inputFunctionButton()
     }
 }
 
-// ##### output
-//
-//
-//
-//
+void inputFunctionReadVelo()
+{
+  for (int i = 0; i < input.veloCount; i++)
+  {
+    // read out analog values
+    //
+    //
+    //
+    //
+
+    //loop through the 4 sig
+    for (int ii = 0; ii < 4; ii++)
+    {
+      digitalWrite(input.controlPin[ii], input.muxChannel[i][ii]);
+    }
+
 
 class PartyModePlaceholder0
 {
@@ -333,7 +415,57 @@ public:
     bool currentBrightness = 0;
 };
 
-PartyModePlaceholder0 partyModePlaceholder0; // erstellt Objekt aus Klasse
+  // find highest value
+  //
+  //
+  //
+  //
+
+  int highestValue = 0;
+  int highestPos = 0;
+
+  // Höchsten Wert finden
+  for (size_t i = 0; i < input.veloCount; i++)
+  {
+    if (input.analogValues[i][3] > highestValue)
+    {
+      highestValue = input.analogValues[i][3];
+    }
+  }
+
+  // Position von höchstem Wert finden
+  for (size_t i = 0; i < input.veloCount; i++)
+  {
+    if (highestValue == input.analogValues[i][3])
+    {
+      highestPos = i;
+    }
+  }
+
+  input.active = highestPos;
+
+  input.averagePercentage = (input.analogValues[0][3] + input.analogValues[1][3] + input.analogValues[2][3] + input.analogValues[3][3] + input.analogValues[4][3] + input.analogValues[5][3] + input.analogValues[6][3] + input.analogValues[7][3]) / input.veloCount;
+
+  // Druck auslesen
+  //
+  //
+  //
+  //
+
+  if (input.averagePercentage < 8)
+  {
+    input.bottleActive = false;
+  }
+  else if (input.averagePercentage < 14)
+  {
+    input.veloPressed[0] = 1;
+  }
+  else
+  {
+    input.veloPressed[1] = 1;
+  }
+}
+
 
 class PartyModePlaceholder1
 {
@@ -635,6 +767,32 @@ void feedbackLEDPressFeedback()
 
 void loop()
 {
+  inputFunctionReadVelo();
+
+  // Velo
+  for (int i = 0; i < input.veloCount; i++)
+  {
+    // Serial.print(input.veloCables[i]);
+    Serial.print(input.analogValues[i][4]);
+    Serial.print("% / ");
+    Serial.print(input.analogValues[i][0]);
+    Serial.print("\t");
+    // Serial.print(input.analogValues[i][0]);
+    // Serial.print("-");
+    // Serial.print(input.analogValues[i][1]);
+    // Serial.print("-");
+    // Serial.print(input.analogValues[i][2]);
+  }
+
+  Serial.print(input.averagePercentage);
+  Serial.print("%\t");
+
+  for (size_t i = 0; i < 5; i++)
+  {
+    Serial.print("\tV: ");
+    Serial.print(input.analogValuesOriginal[1][i]);
+  }
+
     // ##### Joystick
     //
     //
