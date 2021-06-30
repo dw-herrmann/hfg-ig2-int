@@ -12,11 +12,12 @@
 
 int timer = 0;
 
-
 class Input
 {
 public:
   bool bottleActive = false; // Ist Flasche auf Untersetzer?
+  int selectMode = 0;        // Farbe oder modus
+
   // Velo
   // - Mux control pins
   int s0 = 8;
@@ -94,7 +95,8 @@ public:
   bool bottleTilted = false;
   bool bottleTilteState = false;
 
-    // Buttons
+  // Buttons
+  int buttonSensor[2] = {4, 5};
   bool buttonVal[2];
   bool buttonState[2];
 };
@@ -103,6 +105,7 @@ class Output
 {
 public:
   int partyMode = 0;
+  int partyModeColor[4] = {180, 90, 0, 270};
   int mainColor = 0;
 };
 
@@ -600,10 +603,36 @@ void feedbackLEDInteractionStart()
           0, 0, 255,
           false);
 
-            input.buttonOnOff[0]++;
+      // Überarbeitung Dominik: Hauptfarbe auf Ring und Modus auf Mitte
+      setLED(
+          0,
+          0, ledInner,
+          output.partyModeColor[output.partyMode], 255, 255,
+          false);
+
+      // setLED(
+      //     1,
+      //     0, ledOuter,
+      //     output.mainColor, 255, 127,
+      //     false);
+
+      input.veloPressed[0]++;
 
       return;
     }
+
+    // Überarbeitung Dominik: Hauptfarbe auf Ring und Modus auf Mitte
+    setLED(
+        0,
+        0, ledInner,
+        output.partyModeColor[output.partyMode], 255, 255,
+        false);
+
+    // setLED(
+    //     1,
+    //     0, ledOuter,
+    //     output.mainColor, 255, 127,
+    //     false);
 
     // Bei Maximum erreicht LEDs wieder zurücksetzen
     Serial.print("Fertig");
@@ -660,14 +689,31 @@ void feedbackLEDRingSelect()
           }
         }
 
-            // Innenren Ring weiß färben
-            setLED(
-                0,
-                0, ledInner,
-                0, 255, 255,
-                false);
+        // Überarbeitung Dominik: Bei Farbe einstellen Innere LED in Main Color einfärben
+        setLED(
+            0,
+            0, ledInner,
+            output.mainColor, 255, 127,
+            false);
 
-            return;
+        return;
+      } // falls nicht:
+
+      // ledInner -> grau
+      // ledOuter -> Farbkreis
+      setLED(
+          0,
+          0, ledInner,
+          0, 0, 50,
+          false);
+
+      for (size_t i = 0; i < input.veloCount; i++)
+      {
+        setLED(
+            1,
+            i * 4, 4,
+            i * (360 / input.veloCount), 255, 255,
+            false);
       }
 
       return;
@@ -850,6 +896,7 @@ void loop()
   //
 
   feedbackLEDIdle();
+  feedbackLEDRingSelect();
 
   feedbackLEDInteractionStart();
   feedbackLEDPressFeedback();
