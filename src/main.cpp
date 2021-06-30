@@ -48,15 +48,15 @@ int debug = 500;
 Input input;   // erstellt Objekt aus Klasse
 Output output; // erstellt Objekt aus Klasse
 
-//
-//
 // ##### Button
 //
 //
+//
+//
 
-//
-//
 // ##### LEDs
+//
+//
 //
 //
 
