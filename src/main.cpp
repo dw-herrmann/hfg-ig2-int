@@ -58,6 +58,9 @@ public:
       "  grau",
       " braun"};
 
+  // zum Flatten
+  int analogValuesOriginal[8][5];
+
   // jetzt (flattened), min, max, percentage, direction
   int analogValues[8][5] = {
       {0, 1023, 0, 0, 0}, // direction 0
@@ -70,20 +73,12 @@ public:
       {0, 1023, 0, 0, 0}, // direction 7
   };
 
-  // zum Flatten
-  int analogValuesOriginal[8][5] = {
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0}};
+  // value, index
+  int analogValuesSorted[8][2];
 
   int averagePercentage = 0;
   int analogPressedState = false;
-  int veloPressed[2] = {
+  int veloPressed[3] = {
       0, // Flasche drauf gestellt
       0, // Flasche gedrückt
       0  // Flasche heruntergenommen
@@ -131,10 +126,10 @@ Output output; // erstellt Objekt aus Klasse
 //
 
 #define DATA_PIN 6    // LED Steuerung kommt in Pin 6
-int ledInner = 21;    // 21 LEDs für den Inneren
+int ledInner = 20;    // 21 LEDs für den Inneren
 int ledOuter = 32;    // 32 LEDs für den Äußeren
-int ledStrip = 10;    // X LEDs für LED Kette
-#define NUM_LEDS 63   // Gesamtanzahl an LEDs ausrechnen
+int ledStrip = 20;    // X LEDs für LED Kette
+#define NUM_LEDS 72   // Gesamtanzahl an LEDs
 #define BRIGHTNESS 32 // Helligkeit des Rings
 
 #define LED_TYPE WS2811
@@ -486,12 +481,65 @@ void inputFunctionReadVelo()
   //
   //
 
-  if (input.averagePercentage > 12) // über 12, Flasche drauf
-  {
-    // Serial.print("i.vP[0] = ");
-    // Serial.print(input.veloPressed[0]);
-    // Serial.print("\t");
+  int arr[input.veloCount];
+  int alreadyUsed[input.veloCount];
 
+  for (size_t i = 0; i < input.veloCount; i++) // arrays kopieren
+  {
+    arr[i] = input.analogValues[i][4];
+    alreadyUsed[i] = input.analogValues[i][4];
+  }
+
+  // tilt von Flasche erkennen
+  for (int j = 0; j < input.veloCount - 1; j++) // Sortierfunktion
+  {
+
+    if (arr[j] > arr[j + 1])
+    {
+      int temp = arr[j];
+      arr[j] = arr[j + 1];
+      arr[j + 1] = temp;
+
+      j = -1;
+    }
+  }
+
+  for (size_t i = 0; i < input.veloCount; i++) // Werte und Positionen speichern
+  {
+    input.analogValuesSorted[i][0] = arr[i];
+
+    for (size_t ii = 0; ii < input.veloCount; ii++) // Position von Werten finden
+    {
+      if (arr[i] == alreadyUsed[ii])
+      {
+        input.analogValuesSorted[i][1] = ii;
+        alreadyUsed[ii] = -1;
+        break;
+      }
+    }
+  }
+
+  if (input.analogValuesSorted[7][0] - input.analogValuesSorted[1][0] > 30) // wenn Unterschied zwischen neigerichtung und anderer Seite über 30
+  {
+    int sides[2] = {
+        (input.analogValuesSorted[7][1] - input.analogValuesSorted[0][1]) % 4,
+        (input.analogValuesSorted[7][1] - input.analogValuesSorted[1][1]) % 4,
+    };
+
+    if (fabs(sides[0]) <= 1 or fabs(sides[1]) <= 1) // Wenn einer von beiden Punkten genau gegenüber
+    {
+      input.bottleTilted = true;
+      return;
+    }
+  }
+  else
+  {
+    input.bottleTilted = false;
+  }
+
+  // draufstehen checken
+  if (input.averagePercentage > 9) // über 12, Flasche drauf
+  {
     if (!input.bottleActive && !input.veloPressed[0])
     {
       // nur beim frisch drauf stellen
@@ -504,6 +552,7 @@ void inputFunctionReadVelo()
     input.bottleActive = false;
   }
 
+  // draufpressen checken
   if (input.averagePercentage > 35) // über 30, flasche gedrückt
   {
     if (input.bottleActive && input.veloPressed[0] == 0)
@@ -961,15 +1010,15 @@ void loop()
 {
   inputFunctionReadVelo();
 
-  // Velo
-  if (0) // print values
+  // Velo log
+  if (1) // print values
   {
     for (int i = 0; i < input.veloCount; i++)
     {
       if (0) // cable and …
       {
-        Serial.print(input.veloCables[i]);
-        Serial.print("  ");
+        // Serial.print(input.veloCables[i]);
+        // Serial.print("  ");
 
         // Serial.print(input.analogValuesOriginal[i][0]); // original values pure
         // Serial.print(input.analogValues[i][0]); // original values flattened
@@ -991,10 +1040,60 @@ void loop()
       }
     }
 
-    if (0) // average
+    if (1) // highest and lowest
+    {
+      if (0) // high
+      {
+
+        Serial.print("hig: ");
+        Serial.print(input.analogValuesSorted[7][0]);
+        Serial.print("/");
+        Serial.print(input.analogValuesSorted[7][1]);
+        Serial.print("\t");
+      }
+
+      if (0) // low
+      {
+        Serial.print("\tlow: ");
+        Serial.print(input.analogValuesSorted[0][0]);
+        Serial.print("/");
+        Serial.print(input.analogValuesSorted[0][1]);
+        Serial.print(" & ");
+        Serial.print(input.analogValuesSorted[1][0]);
+        Serial.print("/");
+        Serial.print(input.analogValuesSorted[1][1]);
+        Serial.print("\t");
+      }
+
+      if (1) // dif
+      {
+        Serial.print("dif: ");
+        Serial.print(input.analogValuesSorted[7][0] - input.analogValuesSorted[0][0]);
+        Serial.print("/");
+        Serial.print((input.analogValuesSorted[7][1] - input.analogValuesSorted[0][1]) % 4);
+        Serial.print(" & ");
+        Serial.print(input.analogValuesSorted[7][0] - input.analogValuesSorted[1][0]);
+        Serial.print("/");
+        Serial.print((input.analogValuesSorted[7][1] - input.analogValuesSorted[1][1]) % 4);
+        Serial.print("   \t");
+      }
+    }
+
+    if (1) // average
     {
       Serial.print(" avg: ");
       Serial.print(input.averagePercentage);
+      Serial.print("   \t");
+    }
+
+    if (1) // LED Feedback
+    {
+      Serial.print("act: ");
+      Serial.print(input.bottleActive);
+      Serial.print("\t");
+
+      Serial.print("til: ");
+      Serial.print(input.bottleTilted);
       Serial.print("\t");
     }
   }
