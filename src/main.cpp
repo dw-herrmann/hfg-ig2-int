@@ -1,15 +1,6 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
-//
-//
-// ##### Joystick
-//
-//
-
-#define joyX A1
-#define joyY A2
-
 int timer = 0;
 
 class Input
@@ -86,20 +77,11 @@ public:
       0  // Flasche heruntergenommen
   };
 
-  // Joystick
-  int posDefault[2];    // startpunkt bei laden, um ungenaue Startwerte auszugleichen
-  int pos[2];           // positionsdaten - arrays müssen direkt mit Inhaltsmenge angegeben werden
-  int posPercentage[2]; // position als %
-  int angle;            // Winkel
-  int active;           // Auf Winkel liegende Farbe
-  int force;            // Kraft
+  // Velo
+  int active;     // Auf Winkel liegende Farbe
+  int lastActive; // zuletzt ausgewählte Farbe
   bool bottleTilted = false;
-  bool bottleTilteState = false;
-
-  // Buttons
-  int buttonSensor[2] = {4, 5};
-  bool buttonVal[2];
-  bool buttonState[2];
+  int bottleTiltCountDown = 0;
 };
 
 class Output
@@ -114,12 +96,6 @@ int debug = 500;
 
 Input input;   // erstellt Objekt aus Klasse
 Output output; // erstellt Objekt aus Klasse
-
-// ##### Button
-//
-//
-//
-//
 
 // ##### LEDs
 //
@@ -158,25 +134,6 @@ void setup()
   digitalWrite(input.s1, LOW);
   digitalWrite(input.s2, LOW);
   digitalWrite(input.s3, LOW);
-
-  // ##### Joystick
-  //
-  //
-  //
-  //
-
-  // Eingabe-Werte Ausgangszustand feststellen
-  input.posDefault[0] = analogRead(joyX);
-  input.posDefault[1] = analogRead(joyY);
-
-  // ##### Buttons
-  //
-  //
-  //
-  //
-
-  input.buttonSensor[0] = 4;
-  input.buttonSensor[1] = 5;
 
   // ##### LEDs
   //
@@ -283,75 +240,6 @@ void setLED(int ledRange, int firstLED, int amount, int color0, int color1, int 
 //
 //
 //
-
-void inputFunctionJoystick()
-{
-  // Eingabe-Werte empfangen
-  input.pos[0] = analogRead(joyX);
-  input.pos[1] = analogRead(joyY);
-
-  // Werte in % umrechnen
-  input.posPercentage[0] = map(input.pos[0], input.posDefault[0], 1023, 0, 100);
-  input.posPercentage[1] = map(input.pos[1], input.posDefault[1], 1023, 0, 100);
-
-  // Winkel herausfinden
-  input.angle = -atan2(
-                    input.posPercentage[0],
-                    input.posPercentage[1]) *
-                180 / PI;
-
-  // Aktive LED aus Winkel herausfinden
-  input.active = round(map(input.angle, 180, -180, 0, ledOuter));
-
-  // Krafteinwirkung aus Joystick herausfinden
-  input.force = (fabs(input.posPercentage[0]) + fabs(input.posPercentage[1])) / 2;
-  if (input.force > 20)
-  {
-    input.bottleTilted = true;
-  }
-  else
-  {
-    input.bottleTilted = false;
-  }
-
-  // falls button gedrückt und state aus
-  if (input.bottleTilted && !input.bottleTilteState)
-  {
-    input.bottleTilteState = true;
-  }
-
-  // falls button nicht gedrückt und state an
-  else if (!input.bottleTilted && input.bottleTilteState)
-  {
-    input.bottleTilteState = false;
-  }
-}
-
-void inputFunctionButton()
-{
-  for (size_t i = 0; i < 2; i++)
-  {
-    // read the state of the pushbutton value:
-    input.buttonVal[i] = digitalRead(input.buttonSensor[i]);
-
-    // falls button gedrückt und state aus
-    if (input.buttonVal[i] && !input.buttonState[i])
-    {
-      input.buttonState[i] = true;
-      input.veloPressed[i] = !input.veloPressed[i];
-    }
-
-    // falls button nicht gedrückt und state an
-    else if (!input.buttonVal[i] && input.buttonState[i])
-    {
-      input.buttonState[i] = false;
-
-      Serial.print("button ");
-      Serial.print(i);
-      Serial.print(" pressed");
-    }
-  }
-}
 
 void inputFunctionReadVelo()
 {
@@ -552,32 +440,31 @@ void inputFunctionReadVelo()
   }
   else // nur nach flasche drauf und Press checken, wenn nicht getiltet
   {
-
-  // draufstehen checken
-  if (input.averagePercentage > 9) // über 12, Flasche drauf
-  {
-    if (!input.bottleActive && !input.veloPressed[0])
+    // draufstehen checken
+    if (input.averagePercentage > 9) // über 12, Flasche drauf
     {
-      // nur beim frisch drauf stellen
-      input.veloPressed[0] = 1;
-      Serial.print("einmal ausgeläst");
+      if (!input.bottleActive && !input.veloPressed[0])
+      {
+        // nur beim frisch drauf stellen
+        input.veloPressed[0] = 1;
+        Serial.print("einmal ausgelöst");
+      }
+    }
+    else
+    {
+      input.bottleActive = false;
+    }
+
+    // draufpressen checken
+    if (input.averagePercentage > 35) // über 30, flasche gedrückt
+    {
+      if (input.bottleActive && input.veloPressed[0] == 0)
+      {
+        // nur wenn noch nicht ausgelöst
+        input.veloPressed[1] = 1;
+      }
     }
   }
-  else
-  {
-    input.bottleActive = false;
-  }
-
-  // draufpressen checken
-  if (input.averagePercentage > 35) // über 30, flasche gedrückt
-  {
-    if (input.bottleActive && input.veloPressed[0] == 0)
-    {
-      // nur wenn noch nicht ausgelöst
-      input.veloPressed[1] = 1;
-    }
-  }
-}
 }
 
 // ##### output
@@ -609,7 +496,6 @@ void feedbackLEDIdle()
           1,
           0, ledOuter,
           output.mainColor, 255, round(timer / 3 % 2) * 127 + 128,
-          // output.mainColor, 255, 255,
           false);
 
       // Innenring
@@ -617,7 +503,6 @@ void feedbackLEDIdle()
           0,
           0, ledInner,
           output.mainColor, 255, round(timer / 3 % 2) * 127 + 128,
-          // output.mainColor, 255, 255,
           false);
 
       return;
@@ -781,12 +666,6 @@ void feedbackLEDInteractionStart()
           output.partyModeColor[output.partyMode], 255, 255,
           false);
 
-      // setLED(
-      //     1,
-      //     0, ledOuter,
-      //     output.mainColor, 255, 127,
-      //     false);
-
       input.veloPressed[0]++;
 
       return;
@@ -798,12 +677,6 @@ void feedbackLEDInteractionStart()
         0, ledInner,
         output.partyModeColor[output.partyMode], 255, 255,
         false);
-
-    // setLED(
-    //     1,
-    //     0, ledOuter,
-    //     output.mainColor, 255, 127,
-    //     false);
 
     // Bei Maximum erreicht LEDs wieder zurücksetzen
     Serial.print("Fertig");
@@ -832,9 +705,6 @@ void feedbackLEDRingSelect()
       // Farbe von gewählter Richtung verstärken
       if (input.bottleTilted)
       { // Falls Flasche gekippt
-        Serial.print("oh wow, die Flasche ist geneigt ");
-        Serial.print(input.active);
-
         // ledOuter -> Farbkreis
         // ledInner -> gekippte Farbe
 
@@ -892,9 +762,6 @@ void feedbackLEDRingSelect()
 
     if (input.selectMode == 1)
     {
-      Serial.print("input.selectMode "); //debug
-      Serial.print(input.selectMode);    //debug
-      Serial.print(" ");                 //debug
 
       // Abstandsfarbe
       setLED(
@@ -906,8 +773,6 @@ void feedbackLEDRingSelect()
       // 4 Richtungen für Modi zeigen
       if (input.bottleTilted)
       { // Falls Flasche gekippt
-        Serial.print("geneigt ");
-        Serial.print(input.active);
 
         // ledOuter -> 1 schwarz, 6 weiß, 1 schwarz
         // ledInner -> modus
@@ -925,7 +790,7 @@ void feedbackLEDRingSelect()
             setLED(
                 1,
                 (i * input.veloCount) + 1, (ledOuter / 4) - 2,
-                0, 0, 255,
+                output.mainColor, 255, 255,
                 false);
 
             output.partyMode = i;
@@ -992,7 +857,7 @@ void feedbackLEDPressFeedback()
     if (input.veloPressed[1] <= maximum)
     {
       Serial.print("f gedrückt ");
-      
+
       // ledOuter -> weiß
       // ledInner -> weiß
 
@@ -1026,12 +891,12 @@ void feedbackLEDPressFeedback()
 void serialOutput()
 {
   // Velo log
-    for (int i = 0; i < input.veloCount; i++)
-    {
+  for (int i = 0; i < input.veloCount; i++)
+  {
     if (true) // cable and …
-      {
-        // Serial.print(input.veloCables[i]);
-        // Serial.print("  ");
+    {
+      // Serial.print(input.veloCables[i]);
+      // Serial.print("  ");
 
       // Serial.print(i);
       // Serial.print(": ");
@@ -1039,78 +904,78 @@ void serialOutput()
       // Serial.print(" ");
       // Serial.print(input.analogValues[i][2]); // max
       // Serial.print(" ");
-        // Serial.print(input.analogValuesOriginal[i][0]); // original values pure
+      // Serial.print(input.analogValuesOriginal[i][0]); // original values pure
       // Serial.print(" ");
-        // Serial.print(input.analogValues[i][0]); // original values flattened
+      // Serial.print(input.analogValues[i][0]); // original values flattened
       Serial.print(input.analogValues[i][3]); // percentage
       // Serial.print(input.analogValues[i][4]); // percentage flattened (direction)
 
-        Serial.print("\t");
-      }
-
-      if (0) // sorted
-      {
-        for (size_t i = 0; i < input.veloCount; i++)
-        {
-          Serial.print(input.analogValuesSorted[i][0]);
-          Serial.print(" = ");
-          Serial.print(input.analogValuesSorted[i][1]);
-          Serial.print("\t");
-        }
-      }
+      Serial.print("\t");
     }
 
-      if (0) // high
+    if (0) // sorted
+    {
+      for (size_t i = 0; i < input.veloCount; i++)
       {
-        Serial.print("hig: ");
-        Serial.print(input.analogValuesSorted[7][0]);
-        Serial.print("/");
-        Serial.print(input.analogValuesSorted[7][1]);
+        Serial.print(input.analogValuesSorted[i][0]);
+        Serial.print(" = ");
+        Serial.print(input.analogValuesSorted[i][1]);
         Serial.print("\t");
       }
+    }
+  }
 
-      if (0) // low
-      {
-        Serial.print("\tlow: ");
-        Serial.print(input.analogValuesSorted[0][0]);
-        Serial.print("/");
-        Serial.print(input.analogValuesSorted[0][1]);
-        Serial.print(" & ");
-        Serial.print(input.analogValuesSorted[1][0]);
-        Serial.print("/");
-        Serial.print(input.analogValuesSorted[1][1]);
-        Serial.print("\t");
-      }
+  if (0) // high
+  {
+    Serial.print("hig: ");
+    Serial.print(input.analogValuesSorted[7][0]);
+    Serial.print("/");
+    Serial.print(input.analogValuesSorted[7][1]);
+    Serial.print("\t");
+  }
+
+  if (0) // low
+  {
+    Serial.print("\tlow: ");
+    Serial.print(input.analogValuesSorted[0][0]);
+    Serial.print("/");
+    Serial.print(input.analogValuesSorted[0][1]);
+    Serial.print(" & ");
+    Serial.print(input.analogValuesSorted[1][0]);
+    Serial.print("/");
+    Serial.print(input.analogValuesSorted[1][1]);
+    Serial.print("\t");
+  }
 
   if (true) // dif
-      {
-        Serial.print("dif: ");
-        Serial.print(input.analogValuesSorted[7][0] - input.analogValuesSorted[0][0]);
-        Serial.print("/");
-        Serial.print((input.analogValuesSorted[7][1] - input.analogValuesSorted[0][1]) % 4);
-        Serial.print(" & ");
-        Serial.print(input.analogValuesSorted[7][0] - input.analogValuesSorted[1][0]);
-        Serial.print("/");
-        Serial.print((input.analogValuesSorted[7][1] - input.analogValuesSorted[1][1]) % 4);
-        Serial.print("   \t");
-      }
+  {
+    Serial.print("dif: ");
+    Serial.print(input.analogValuesSorted[7][0] - input.analogValuesSorted[0][0]);
+    Serial.print("/");
+    Serial.print((input.analogValuesSorted[7][1] - input.analogValuesSorted[0][1]) % 4);
+    Serial.print(" & ");
+    Serial.print(input.analogValuesSorted[7][0] - input.analogValuesSorted[1][0]);
+    Serial.print("/");
+    Serial.print((input.analogValuesSorted[7][1] - input.analogValuesSorted[1][1]) % 4);
+    Serial.print("   \t");
+  }
 
   if (true) // average
-    {
-      Serial.print(" avg: ");
-      Serial.print(input.averagePercentage);
-      Serial.print("   \t");
-    }
+  {
+    Serial.print(" avg: ");
+    Serial.print(input.averagePercentage);
+    Serial.print("   \t");
+  }
 
   if (true) // LED Feedback
-    {
-      Serial.print("act: ");
-      Serial.print(input.bottleActive);
-      Serial.print("\t");
+  {
+    Serial.print("act: ");
+    Serial.print(input.bottleActive);
+    Serial.print("\t");
 
-      Serial.print("til: ");
-      Serial.print(input.bottleTilted);
-      Serial.print("\t");
+    Serial.print("til: ");
+    Serial.print(input.bottleTilted);
+    Serial.print("\t");
 
     Serial.print("dir: ");
     Serial.print(input.active);
@@ -1139,23 +1004,14 @@ void serialOutput()
       Serial.print(input.analogValuesOriginal[3][i]);
       Serial.print("\t");
     }
-    }
   }
+}
 
 void loop()
 {
   inputFunctionReadVelo();
 
   serialOutput();
-
-  // ##### Joystick
-  //
-  //
-  //
-  //
-
-  // inputFunctionJoystick();
-  // inputFunctionButton();
 
   // ##### LEDs
   //
