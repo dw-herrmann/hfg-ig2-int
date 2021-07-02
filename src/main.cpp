@@ -1008,24 +1008,27 @@ void feedbackLEDPressFeedback()
   }
 }
 
-void loop()
+void serialOutput()
 {
-  inputFunctionReadVelo();
-
   // Velo log
-  if (1) // print values
-  {
     for (int i = 0; i < input.veloCount; i++)
     {
-      if (0) // cable and …
+    if (true) // cable and …
       {
         // Serial.print(input.veloCables[i]);
         // Serial.print("  ");
 
+      // Serial.print(i);
+      // Serial.print(": ");
+      // Serial.print(input.analogValues[i][1]); // min
+      // Serial.print(" ");
+      // Serial.print(input.analogValues[i][2]); // max
+      // Serial.print(" ");
         // Serial.print(input.analogValuesOriginal[i][0]); // original values pure
+      // Serial.print(" ");
         // Serial.print(input.analogValues[i][0]); // original values flattened
-        // Serial.print(input.analogValues[i][3]); // percentage
-        Serial.print(input.analogValues[i][4]); // percentage flattened (direction)
+      Serial.print(input.analogValues[i][3]); // percentage
+      // Serial.print(input.analogValues[i][4]); // percentage flattened (direction)
 
         Serial.print("\t");
       }
@@ -1042,11 +1045,8 @@ void loop()
       }
     }
 
-    if (1) // highest and lowest
-    {
       if (0) // high
       {
-
         Serial.print("hig: ");
         Serial.print(input.analogValuesSorted[7][0]);
         Serial.print("/");
@@ -1067,7 +1067,7 @@ void loop()
         Serial.print("\t");
       }
 
-      if (1) // dif
+  if (true) // dif
       {
         Serial.print("dif: ");
         Serial.print(input.analogValuesSorted[7][0] - input.analogValuesSorted[0][0]);
@@ -1079,16 +1079,15 @@ void loop()
         Serial.print((input.analogValuesSorted[7][1] - input.analogValuesSorted[1][1]) % 4);
         Serial.print("   \t");
       }
-    }
 
-    if (1) // average
+  if (true) // average
     {
       Serial.print(" avg: ");
       Serial.print(input.averagePercentage);
       Serial.print("   \t");
     }
 
-    if (1) // LED Feedback
+  if (true) // LED Feedback
     {
       Serial.print("act: ");
       Serial.print(input.bottleActive);
@@ -1097,9 +1096,38 @@ void loop()
       Serial.print("til: ");
       Serial.print(input.bottleTilted);
       Serial.print("\t");
+
+    Serial.print("dir: ");
+    Serial.print(input.active);
+    Serial.print("\t");
+  }
+
+  if (true) // tild countdown
+  {
+    Serial.print("tcnt: ");
+    Serial.print(input.bottleTiltCountDown);
+    Serial.print("\t");
+  }
+
+  if (false) // flattening values
+  {
+    for (size_t i = 0; i < 5; i++)
+    {
+      Serial.print(input.analogValuesOriginal[0][i]);
+      Serial.print("\t");
+    }
+
+    Serial.print("|||||\t");
+
+    for (size_t i = 0; i < 5; i++)
+    {
+      Serial.print(input.analogValuesOriginal[3][i]);
+      Serial.print("\t");
+    }
     }
   }
 
+  serialOutput();
 
   // ##### Joystick
   //
