@@ -374,8 +374,8 @@ void inputFunctionReadVelo()
     //
     //
     //
+    for (size_t ii = 2; ii > 0; ii--)
 
-    for (size_t ii = 5; ii > 0; ii--)
     {
       // push values one backwards
       input.analogValuesOriginal[i][ii] = input.analogValuesOriginal[i][ii - 1];
@@ -383,11 +383,8 @@ void inputFunctionReadVelo()
     input.analogValuesOriginal[i][0] = analogRead(input.SIG_pin);
 
     input.analogValues[i][0] = (input.analogValuesOriginal[i][0] * 10 +
-                                input.analogValuesOriginal[i][1] * 4 +
-                                input.analogValuesOriginal[i][2] * 3 +
-                                input.analogValuesOriginal[i][3] * 2 +
-                                input.analogValuesOriginal[i][4] * 1) /
-                               20;
+                                input.analogValuesOriginal[i][1] * 5) /
+                               15;
 
     // get percentage value
     //
@@ -396,7 +393,7 @@ void inputFunctionReadVelo()
     //
 
     // niedrigsten Wert finden
-    if (input.analogValues[i][0] < input.analogValues[i][1] && input.analogValues[i][0] != 0)
+    if (input.analogValues[i][0] < input.analogValues[i][1])
     {
       input.analogValues[i][1] = input.analogValues[i][0];
     }
@@ -521,23 +518,40 @@ void inputFunctionReadVelo()
     }
   }
 
-  if (input.analogValuesSorted[7][0] - input.analogValuesSorted[1][0] > 30) // wenn Unterschied zwischen neigerichtung und anderer Seite über 30
+  if (input.analogValuesSorted[7][0] - input.analogValuesSorted[1][0] > 25) // wenn Unterschied zwischen neigerichtung und anderer Seite über 30
   {
     int sides[2] = {
         (input.analogValuesSorted[7][1] - input.analogValuesSorted[0][1]) % 4,
         (input.analogValuesSorted[7][1] - input.analogValuesSorted[1][1]) % 4,
     };
 
-    if (fabs(sides[0]) <= 1 or fabs(sides[1]) <= 1) // Wenn einer von beiden Punkten genau gegenüber
+    if (fabs(sides[0]) <= 0 or fabs(sides[1]) <= 0) // Wenn einer von beiden Punkten genau gegenüber
     {
       input.bottleTilted = true;
-      return;
+      input.bottleTiltCountDown = 15;
+      input.lastActive = input.active;
+    }
+    else
+    {
+      input.bottleTilted = false;
     }
   }
   else
   {
     input.bottleTilted = false;
   }
+
+  // tilt countdown für unabsichtliches nicht tilten
+  if (input.bottleTiltCountDown != 0 && input.averagePercentage < 35)
+  {
+    // solange nicht abgelaufen, behalte vorherigen State bei
+    input.bottleTilted = true;
+    input.bottleActive = true;
+    input.active = input.lastActive;
+    input.bottleTiltCountDown--;
+  }
+  else // nur nach flasche drauf und Press checken, wenn nicht getiltet
+  {
 
   // draufstehen checken
   if (input.averagePercentage > 9) // über 12, Flasche drauf
@@ -563,6 +577,7 @@ void inputFunctionReadVelo()
       input.veloPressed[1] = 1;
     }
   }
+}
 }
 
 // ##### output
@@ -1126,6 +1141,10 @@ void serialOutput()
     }
     }
   }
+
+void loop()
+{
+  inputFunctionReadVelo();
 
   serialOutput();
 
