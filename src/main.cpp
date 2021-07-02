@@ -54,9 +54,9 @@ public:
       " gruen",
       "  blau",
       "violet",
-      " weiss",
       "  grau",
-      " braun"};
+      " weiss",
+      " schwarz"};
 
   // zum Flatten
   int analogValuesOriginal[8][5];
@@ -72,6 +72,8 @@ public:
       {0, 1023, 0, 0, 0}, // direction 6
       {0, 1023, 0, 0, 0}, // direction 7
   };
+
+  // V1: 817, 725, 579, 419, 424, 666, 584, 676
 
   // value, index
   int analogValuesSorted[8][2];
