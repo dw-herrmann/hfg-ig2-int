@@ -106,9 +106,9 @@ Output output; // erstellt Objekt aus Klasse
 #define DATA_PIN 6    // LED Steuerung kommt in Pin 6
 int ledInner = 20;    // 21 LEDs für den Inneren
 int ledOuter = 32;    // 32 LEDs für den Äußeren
-int ledStrip = 20;    // X LEDs für LED Kette
-#define NUM_LEDS 72   // Gesamtanzahl an LEDs
-#define BRIGHTNESS 32 // Helligkeit des Rings
+int ledStrip = 239;   // X LEDs für LED Kette
+#define NUM_LEDS 291  // Gesamtanzahl an LEDs
+#define BRIGHTNESS 16 // Helligkeit des Rings
 
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
@@ -441,7 +441,7 @@ void inputFunctionReadVelo()
   else // nur nach flasche drauf und Press checken, wenn nicht getiltet
   {
     // draufstehen checken
-    if (input.averagePercentage > 9) // über 12, Flasche drauf
+    if (input.averagePercentage > 15) // über 12, Flasche drauf
     {
       if (!input.bottleActive && !input.veloPressed[0])
       {
@@ -487,16 +487,9 @@ void feedbackLEDIdle()
   if (!input.bottleActive)
   {
 
-    if (output.partyMode == 1)
+    if (output.partyMode == 0)
     {
-      // Serial.print("mode 0");
-
-      // Außenring
-      setLED(
-          1,
-          0, ledOuter,
-          output.mainColor, 255, round(timer / 3 % 2) * 127 + 128,
-          false);
+      Serial.print("mode 0");
 
       // Innenring
       setLED(
@@ -505,30 +498,25 @@ void feedbackLEDIdle()
           output.mainColor, 255, round(timer / 3 % 2) * 127 + 128,
           false);
 
-      return;
-    }
-
-    if (output.partyMode == 0)
-    {
-      // Serial.print("mode 1");
-
-      // if (partyModePlaceholder1.currentBrightness >= 255)
-      // {
-      //     // Brightness Fade in
-      //     partyModePlaceholder1.currentBrightness = 63;
-
-      //     // Saturation on off
-      //     partyModePlaceholder1.currentSaturation = !partyModePlaceholder1.currentSaturation;
-      // }
-      // partyModePlaceholder1.currentBrightness = partyModePlaceholder1.currentBrightness + 32;
-
       // Außenring
       setLED(
           1,
           0, ledOuter,
-          output.mainColor, timer / 16 % 2 * 255, timer % 16 * 12 + 64,
+          output.mainColor, 255, round(timer / 3 % 2) * 127 + 128,
           false);
 
+      // Strip
+      setLED(
+          3,
+          0, ledStrip,
+          output.mainColor, 255, round(timer / 3 % 2) * 127 + 128,
+          false);
+
+      return;
+    }
+
+    if (output.partyMode == 1)
+    {
       // Innenring
       setLED(
           0,
@@ -537,10 +525,19 @@ void feedbackLEDIdle()
           // output.mainColor, (timer + 16 ) / 16 % 2 * 255, timer + 16 % 16 * 12 + 64,
           false);
 
-      // Serial.print(" B: ");
-      // Serial.print(partyModePlaceholder1.currentBrightness);
-      // Serial.print(" S: ");
-      // Serial.print(partyModePlaceholder1.currentSaturation);
+      // Außenring
+      setLED(
+          1,
+          0, ledOuter,
+          output.mainColor, timer / 16 % 2 * 255, timer % 16 * 12 + 64,
+          false);
+
+      // Strip
+      setLED(
+          3,
+          0, ledStrip,
+          output.mainColor, timer / 16 % 2 * 255, timer % 16 * 12 + 64,
+          false);
 
       return;
     }
@@ -745,7 +742,7 @@ void feedbackLEDRingSelect()
       setLED(
           0,
           0, ledInner,
-          0, 0, 50,
+          0, 0, 127,
           false);
 
       for (size_t i = 0; i < input.veloCount; i++)
@@ -767,21 +764,51 @@ void feedbackLEDRingSelect()
       setLED(
           1,
           0, ledOuter,
-          0, 255, 127,
+          0, 255, 255,
           false);
+
+      // Füllfarbe
+      for (size_t i = 0; i < 4; i++)
+      {
+        setLED(
+            1,
+            (i * input.veloCount) + 1, (ledOuter / 4) - 2,
+            0, 0, 191,
+            false);
+      }
+
+      // innerer Ring
+      setLED(
+          0,
+          0, ledInner,
+          0, 0, 127,
+          false);
+
+      // im Kipp-Modus
+      if (input.bottleTilted)
+      {
+        Serial.print("\txyz ");
+        Serial.print(float(floor(input.active / 2)));
+
+        for (size_t i = 0; i < 4; i++)
+        {
+          // färbe entsprechende Richtung ein
+          if (float(floor(input.active / 2)) == i)
+          {
+            setLED(
+                1,
+                (i * input.veloCount) + 1, (ledOuter / 4) - 2,
+                output.mainColor, 255, 255,
+                false);
+          }
+        }
+      }
+
+      return;
 
       // 4 Richtungen für Modi zeigen
       if (input.bottleTilted)
       { // Falls Flasche gekippt
-
-        // ledOuter -> 1 schwarz, 6 weiß, 1 schwarz
-        // ledInner -> modus
-
-        setLED(
-            0,
-            0, ledInner,
-            0, 0, 127,
-            false);
 
         for (size_t i = 0; i < 4; i++)
         {
@@ -815,15 +842,6 @@ void feedbackLEDRingSelect()
           0, ledInner,
           0, 0, 125,
           false);
-
-      for (size_t i = 0; i < 4; i++)
-      {
-        setLED(
-            1,
-            (i * input.veloCount) + 1, (ledOuter / 4) - 2,
-            0, 0, 255,
-            false);
-      }
 
       return;
     }
@@ -902,13 +920,14 @@ void serialOutput()
       // Serial.print(": ");
       // Serial.print(input.analogValues[i][1]); // min
       // Serial.print(" ");
-      // Serial.print(input.analogValues[i][2]); // max
-      // Serial.print(" ");
+      Serial.print(input.analogValues[i][2]); // max
+      Serial.print(" ");
       // Serial.print(input.analogValuesOriginal[i][0]); // original values pure
       // Serial.print(" ");
       // Serial.print(input.analogValues[i][0]); // original values flattened
-      Serial.print(input.analogValues[i][3]); // percentage
-      // Serial.print(input.analogValues[i][4]); // percentage flattened (direction)
+      // Serial.print(input.analogValues[i][3]); // percentage
+      Serial.print(" ");
+      Serial.print(input.analogValues[i][4]); // percentage flattened (direction)
 
       Serial.print("\t");
     }
@@ -925,15 +944,6 @@ void serialOutput()
     }
   }
 
-  if (0) // high
-  {
-    Serial.print("hig: ");
-    Serial.print(input.analogValuesSorted[7][0]);
-    Serial.print("/");
-    Serial.print(input.analogValuesSorted[7][1]);
-    Serial.print("\t");
-  }
-
   if (0) // low
   {
     Serial.print("\tlow: ");
@@ -947,7 +957,16 @@ void serialOutput()
     Serial.print("\t");
   }
 
-  if (true) // dif
+  if (0) // high
+  {
+    Serial.print("hig: ");
+    Serial.print(input.analogValuesSorted[7][0]);
+    Serial.print("/");
+    Serial.print(input.analogValuesSorted[7][1]);
+    Serial.print("\t");
+  }
+
+  if (0) // dif
   {
     Serial.print("dif: ");
     Serial.print(input.analogValuesSorted[7][0] - input.analogValuesSorted[0][0]);
@@ -960,14 +979,14 @@ void serialOutput()
     Serial.print("   \t");
   }
 
-  if (true) // average
+  if (1) // average
   {
     Serial.print(" avg: ");
     Serial.print(input.averagePercentage);
     Serial.print("   \t");
   }
 
-  if (true) // LED Feedback
+  if (0) // LED Feedback
   {
     Serial.print("act: ");
     Serial.print(input.bottleActive);
@@ -982,14 +1001,14 @@ void serialOutput()
     Serial.print("\t");
   }
 
-  if (true) // tild countdown
+  if (0) // tild countdown
   {
     Serial.print("tcnt: ");
     Serial.print(input.bottleTiltCountDown);
     Serial.print("\t");
   }
 
-  if (false) // flattening values
+  if (0) // flattening values
   {
     for (size_t i = 0; i < 5; i++)
     {
