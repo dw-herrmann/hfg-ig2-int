@@ -489,7 +489,7 @@ void feedbackLEDIdle()
 
     if (output.partyMode == 0)
     {
-      Serial.print("mode 0");
+      // Serial.print("mode 0");
 
       // Innenring
       setLED(
@@ -911,17 +911,17 @@ void serialOutput()
   // Velo log
   for (int i = 0; i < input.veloCount; i++)
   {
-    if (true) // cable and …
+    if (true) // cable and values
     {
-      // Serial.print(input.veloCables[i]);
-      // Serial.print("  ");
+      Serial.print(input.veloCables[i]);
+      Serial.print("  ");
 
       // Serial.print(i);
       // Serial.print(": ");
       // Serial.print(input.analogValues[i][1]); // min
       // Serial.print(" ");
-      Serial.print(input.analogValues[i][2]); // max
-      Serial.print(" ");
+      // Serial.print(input.analogValues[i][2]); // max
+      // Serial.print(" ");
       // Serial.print(input.analogValuesOriginal[i][0]); // original values pure
       // Serial.print(" ");
       // Serial.print(input.analogValues[i][0]); // original values flattened
@@ -932,7 +932,7 @@ void serialOutput()
       Serial.print("\t");
     }
 
-    if (0) // sorted
+    if (false) // sorted
     {
       for (size_t i = 0; i < input.veloCount; i++)
       {
@@ -944,7 +944,7 @@ void serialOutput()
     }
   }
 
-  if (0) // low
+  if (false) // lowest values
   {
     Serial.print("\tlow: ");
     Serial.print(input.analogValuesSorted[0][0]);
@@ -957,7 +957,7 @@ void serialOutput()
     Serial.print("\t");
   }
 
-  if (0) // high
+  if (false) // highest values
   {
     Serial.print("hig: ");
     Serial.print(input.analogValuesSorted[7][0]);
@@ -966,7 +966,7 @@ void serialOutput()
     Serial.print("\t");
   }
 
-  if (0) // dif
+  if (false) // dif
   {
     Serial.print("dif: ");
     Serial.print(input.analogValuesSorted[7][0] - input.analogValuesSorted[0][0]);
@@ -979,36 +979,36 @@ void serialOutput()
     Serial.print("   \t");
   }
 
-  if (1) // average
+  if (false) // pressure 
   {
     Serial.print(" avg: ");
     Serial.print(input.averagePercentage);
     Serial.print("   \t");
   }
 
-  if (0) // LED Feedback
+  if (true) // state feedback
   {
-    Serial.print("act: ");
+    // Serial.print("act: ");
     Serial.print(input.bottleActive);
     Serial.print("\t");
 
-    Serial.print("til: ");
+    // Serial.print("til: ");
     Serial.print(input.bottleTilted);
     Serial.print("\t");
 
-    Serial.print("dir: ");
+    // Serial.print("dir: ");
     Serial.print(input.active);
     Serial.print("\t");
   }
 
-  if (0) // tild countdown
+  if (false) // tilt values 
   {
     Serial.print("tcnt: ");
     Serial.print(input.bottleTiltCountDown);
     Serial.print("\t");
   }
 
-  if (0) // flattening values
+  if (false) // flattening values
   {
     for (size_t i = 0; i < 5; i++)
     {
